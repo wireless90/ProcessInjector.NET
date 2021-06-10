@@ -10,6 +10,8 @@ namespace ProcessInjector
     {
         #region For CreateProcess
         /// <summary>
+        /// Specifies the window station, desktop, standard handles, and appearance of the main window for a process at creation time.
+        /// 
         /// <see cref="https://www.pinvoke.net/default.aspx/Structures/StartupInfo.html?diff=y"/>
         /// </summary>
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -37,6 +39,7 @@ namespace ProcessInjector
 
         /// <summary>
         /// Contains information about a newly created process and its primary thread. 
+        /// 
         /// <see cref="https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information"/>\
         /// <seealso cref="https://www.pinvoke.net/default.aspx/kernel32/CreateProcess.html"/>
         /// </summary>
