@@ -8,11 +8,12 @@ namespace ProcessInjector
     /// </summary>
     public static class PInvoke
     {
+        #region For CreateProcess
         /// <summary>
         /// <see cref="https://www.pinvoke.net/default.aspx/Structures/StartupInfo.html?diff=y"/>
         /// </summary>
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-        struct STARTUPINFO
+        public struct STARTUPINFO
         {
             public Int32 cb;
             public string lpReserved;
@@ -33,5 +34,47 @@ namespace ProcessInjector
             public IntPtr hStdOutput;
             public IntPtr hStdError;
         }
+
+        /// <summary>
+        /// Contains information about a newly created process and its primary thread. 
+        /// <see cref="https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information"/>\
+        /// <seealso cref="https://www.pinvoke.net/default.aspx/kernel32/CreateProcess.html"/>
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct PROCESS_INFORMATION
+        {
+            /// <summary>
+            /// A handle to the newly created process. 
+            /// The handle is used to specify the process in all functions that perform operations on the process object.
+            /// </summary>
+            public IntPtr hProcess;
+
+            /// <summary>
+            /// A handle to the primary thread of the newly created process. 
+            /// The handle is used to specify the thread in all functions that perform operations on the thread object.
+            /// </summary>
+            public IntPtr hThread;
+
+
+            public int dwProcessId;
+            public int dwThreadI;
+        }
+
+
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern bool CreateProcess(
+               string lpApplicationName,
+               string lpCommandLine,
+               IntPtr lpProcessAttributes,
+               IntPtr lpThreadAttributes,
+               bool bInheritHandles,
+               uint dwCreationFlags,
+               IntPtr lpEnvironment,
+               string lpCurrentDirectory,
+               STARTUPINFO lpStartupInfo,
+               PROCESS_INFORMATION lpProcessInformation);
+    
+        #endregion
     }
 }
