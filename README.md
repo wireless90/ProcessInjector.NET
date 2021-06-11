@@ -136,3 +136,8 @@ static void Main(string[] args)
 ```
 
 ![image](https://user-images.githubusercontent.com/12537739/121704357-47d02e00-cb06-11eb-8847-46063bc4c2c2.png)
+
+We have successfully loaded our victim executable to memory, and it is now in a suspended state.
+
+
+# Hollowing our Victim Process
