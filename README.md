@@ -91,13 +91,13 @@ We won't be needing it thus we will set it to NULL.
 
 A pointer to a [STARTUPINFO](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-startupinfoa) structure.
 
-I ported the structure with the help from (PInvoke.Net - StartupInfo](https://www.pinvoke.net/default.aspx/Structures/StartupInfo.html?diff=y).
+I ported the structure with the help from [PInvoke.Net StartupInfo](https://www.pinvoke.net/default.aspx/Structures/StartupInfo.html?diff=y).
 
 
 ### lpProcessInformation
 A pointer to a [PROCESS_INFORMATION](https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/ns-processthreadsapi-process_information) structure that receives identification information about the new process.
 
-I ported the structure with the help from (PInvoke.Net - ProcessInformation](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information).
+I ported the structure with the help from [PInvoke.Net ProcessInformation](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information).
 
 This is a very important structure as we would be using the thread handles from it.
 
