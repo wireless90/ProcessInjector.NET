@@ -103,7 +103,7 @@ This is a very important structure as we would be using the thread handles from 
 
 ## Code Example
 
-Let's go ahead and create our victime process in a suspended state.
+Let's go ahead and create our victim process in a suspended state.
 
 ```cs
 static void Main(string[] args)
