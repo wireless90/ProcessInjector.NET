@@ -10,6 +10,10 @@ I want to try to inject a dummy application into notepad++ using the `Process Ho
   * [CreateProcessA Parameters](#createprocessa-parameters)
     + [lpApplicationName](#lpapplicationname)
     + [lpCommandLine](#lpcommandline)
+    + [lpProcessAttributes](#lpprocessattributes)
+    + [lpThreadAttributes](#lpthreadattributes)
+    + [bInheritHandles](#binherithandles)
+    + [dwCreationFlags](#dwcreationflags)
 
 # Creating our Victim Process
 
