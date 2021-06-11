@@ -14,6 +14,10 @@ I want to try to inject a dummy application into notepad++ using the `Process Ho
     + [lpThreadAttributes](#lpthreadattributes)
     + [bInheritHandles](#binherithandles)
     + [dwCreationFlags](#dwcreationflags)
+    + [lpEnvironment](#lpenvironment)
+    + [lpStartupInfo](#lpstartupinfo)
+    + [lpProcessInformation](#lpprocessinformation)
+  * [Code Example](#code-example)
 
 # Creating our Victim Process
 
@@ -75,3 +79,60 @@ I will be putting it as FALSE.
 The flags that control the priority class and the creation of the process. For a list of values, see [Process Creation Flags](https://docs.microsoft.com/en-us/windows/win32/procthread/process-creation-flags).
 
 We want to create a `SUSPENDED` process. Thus we will be using `CREATE_SUSPENDED` which has a value `0x4`.
+
+### lpEnvironment
+
+An environment block consists of a null-terminated block of null-terminated strings. Each string is in the following form:
+
+`name=value\0`
+We won't be needing it thus we will set it to NULL.
+
+### lpStartupInfo
+
+A pointer to a [STARTUPINFO](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-startupinfoa) structure.
+
+I ported the structure with the help from (PInvoke.Net - StartupInfo]("https://www.pinvoke.net/default.aspx/Structures/StartupInfo.html?diff=y).
+
+
+### lpProcessInformation
+A pointer to a [PROCESS_INFORMATION](https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/ns-processthreadsapi-process_information) structure that receives identification information about the new process.
+
+I ported the structure with the help from (PInvoke.Net - ProcessInformation]("https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information).
+
+This is a very important structure as we would be using the thread handles from it.
+
+## Code Example
+
+Let's go ahead and create our victime process in a suspended state.
+
+```cs
+static void Main(string[] args)
+{
+    string notepadPath = @"D:\Program Files\Notepad++\notepad++";
+
+    PInvoke.STARTUPINFO startupInfo = new PInvoke.STARTUPINFO();
+    PInvoke.PROCESS_INFORMATION processInformation = new PInvoke.PROCESS_INFORMATION();
+
+    bool couldNotCreateProcess = !PInvoke.CreateProcess(
+                                        lpApplicationName: null,
+                                        lpCommandLine: notepadPath,
+                                        lpProcessAttributes: IntPtr.Zero,
+                                        lpThreadAttributes: IntPtr.Zero,
+                                        bInheritHandles: false,
+                                        dwCreationFlags: PInvoke.CreationFlags.SUSPENDED,
+                                        lpEnvironment: IntPtr.Zero,
+                                        lpCurrentDirectory: null,
+                                        lpStartupInfo: startupInfo,
+                                        lpProcessInformation: processInformation
+                                    );
+    if (couldNotCreateProcess)
+    {
+        Console.WriteLine("Failed to create process...");
+    }
+
+    Console.WriteLine("Created to create process...");
+
+}
+```
+
+![image](https://user-images.githubusercontent.com/12537739/121704357-47d02e00-cb06-11eb-8847-46063bc4c2c2.png)
