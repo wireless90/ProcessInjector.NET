@@ -130,7 +130,7 @@ static void Main(string[] args)
         Console.WriteLine("Failed to create process...");
     }
 
-    Console.WriteLine("Created to create process...");
+    Console.WriteLine("Successfully victim process...");
 
 }
 ```
