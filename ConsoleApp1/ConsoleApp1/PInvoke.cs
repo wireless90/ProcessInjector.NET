@@ -66,7 +66,7 @@ namespace ProcessInjector
 
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        static extern bool CreateProcess(
+        public static extern bool CreateProcess(
                string lpApplicationName,
                string lpCommandLine,
                IntPtr lpProcessAttributes,
@@ -78,6 +78,10 @@ namespace ProcessInjector
                STARTUPINFO lpStartupInfo,
                PROCESS_INFORMATION lpProcessInformation);
     
+        public static class CreationFlags
+        {
+            public const uint SUSPENDED = 0x4;
+        }
         #endregion
     }
 }
