@@ -166,7 +166,7 @@ NTSYSAPI NTSTATUS ZwUnmapViewOfSection(
 
 Previously, we called the `CreateProcessA` function. This function helps fill up our `PROCESS_INFORMATION` block.
 
-`PROCESS_INFORMATION` contains the handle to our victim 
+`PROCESS_INFORMATION` contains the handle to our victim process.
 
 Thus we can get the process handle from it using
 
