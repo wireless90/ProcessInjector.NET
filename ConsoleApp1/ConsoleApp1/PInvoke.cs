@@ -81,6 +81,7 @@ namespace ProcessInjector
         public static class CreationFlags
         {
             public const uint SUSPENDED = 0x4;
+            
         }
 
         #endregion
@@ -97,6 +98,21 @@ namespace ProcessInjector
 
         }
 
+        /// <summary>
+        /// The ZwUnmapViewOfSection routine unmaps a view of a section from the virtual address space of a subject process.
+        /// 
+        /// <see cref="https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwunmapviewofsection"/>
+        /// </summary>
+        /// <param name="ProcessHandle">Handle to a process object. You can take this handle from the <see cref="PROCESS_INFORMATION.hProcess"/></param>
+        /// <param name="BaseAddress">
+        ///     Pointer to the base virtual address of the view to unmap.
+        ///     <see cref="https://upload.wikimedia.org/wikipedia/commons/1/1b/Portable_Executable_32_bit_Structure_in_SVG_fixed.svg"/>
+        ///     Although the above is for a pe32, pe64 is slightly different as the imagebase is at 0x0030 and 8 bytes long and not at 0x0034 4 bytes long
+        /// </param>
+        /// <returns><see cref="NTSTATUS"/></returns>
+        [DllImport("ntdll.dll")]
+        private static extern NTSTATUS ZwUnmapViewOfSection(long ProcessHandle,
+                                                        long BaseAddress);
         #endregion
     }
 }
