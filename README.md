@@ -18,6 +18,11 @@ I want to try to inject a dummy application into notepad++ using the `Process Ho
     + [lpStartupInfo](#lpstartupinfo)
     + [lpProcessInformation](#lpprocessinformation)
   * [Code Example](#code-example)
+- [Hollowing our Victim Process](#hollowing-our-victim-process)
+  * [ZwUnmapViewOfSection Parameters](#zwunmapviewofsection-parameters)
+    + [ProcessHandle](#processhandle)
+    + [BaseAddress](#baseaddress)
+  * [Code Example](#code-example-1)
 
 # Creating our Victim Process
 
