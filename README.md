@@ -91,19 +91,19 @@ We won't be needing it thus we will set it to NULL.
 
 A pointer to a [STARTUPINFO](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-startupinfoa) structure.
 
-I ported the structure with the help from (PInvoke.Net - StartupInfo]("https://www.pinvoke.net/default.aspx/Structures/StartupInfo.html?diff=y).
+I ported the structure with the help from [PInvoke.Net StartupInfo](https://www.pinvoke.net/default.aspx/Structures/StartupInfo.html?diff=y).
 
 
 ### lpProcessInformation
 A pointer to a [PROCESS_INFORMATION](https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/ns-processthreadsapi-process_information) structure that receives identification information about the new process.
 
-I ported the structure with the help from (PInvoke.Net - ProcessInformation]("https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information).
+I ported the structure with the help from [PInvoke.Net ProcessInformation](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information).
 
 This is a very important structure as we would be using the thread handles from it.
 
 ## Code Example
 
-Let's go ahead and create our victime process in a suspended state.
+Let's go ahead and create our victim process in a suspended state.
 
 ```cs
 static void Main(string[] args)
@@ -130,9 +130,14 @@ static void Main(string[] args)
         Console.WriteLine("Failed to create process...");
     }
 
-    Console.WriteLine("Created to create process...");
+    Console.WriteLine("Successfully victim process...");
 
 }
 ```
 
 ![image](https://user-images.githubusercontent.com/12537739/121704357-47d02e00-cb06-11eb-8847-46063bc4c2c2.png)
+
+We have successfully loaded our victim executable to memory, and it is now in a suspended state.
+
+
+# Hollowing our Victim Process
