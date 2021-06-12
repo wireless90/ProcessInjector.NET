@@ -260,3 +260,5 @@ static void Main(string[] args)
     Console.WriteLine("Successfully unmapped victim process.");
 }
 ```
+
+![image](https://user-images.githubusercontent.com/12537739/121773946-dfd72180-cbb1-11eb-9338-3ca73ea97228.png)
