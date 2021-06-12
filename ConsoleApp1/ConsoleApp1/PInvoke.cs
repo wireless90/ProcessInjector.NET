@@ -82,6 +82,18 @@ namespace ProcessInjector
         {
             public const uint SUSPENDED = 0x4;
         }
+
+        #endregion
+
+        #region For ZwUnmapViewOfSection 
+
+        enum NTSTATUS : uint
+        {
+            STATUS_SUCCESS = 0, // The operation completed successfully.
+            STATUS_ACCESS_DENIED = 0xC0000022 // A process has requested access to an object but has not been granted those access rights.
+
+        }
+
         #endregion
     }
 }
