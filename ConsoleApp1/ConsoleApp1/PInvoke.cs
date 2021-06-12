@@ -91,11 +91,16 @@ namespace ProcessInjector
         /// <summary>
         /// <see cref="https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-erref/596a1078-e883-4972-9bbc-49e60bebca55"/>
         /// </summary>
-        enum NTSTATUS : uint
+        public enum NTSTATUS : uint
         {
             STATUS_SUCCESS = 0, // The operation completed successfully.
             STATUS_ACCESS_DENIED = 0xC0000022 // A process has requested access to an object but has not been granted those access rights.
 
+        }
+
+        public static class  Offsets
+        {
+            public const int E_LFANEW = 0x3C;
         }
 
         /// <summary>
@@ -111,8 +116,7 @@ namespace ProcessInjector
         /// </param>
         /// <returns><see cref="NTSTATUS"/></returns>
         [DllImport("ntdll.dll")]
-        private static extern NTSTATUS ZwUnmapViewOfSection(long ProcessHandle,
-                                                        long BaseAddress);
+        public static extern NTSTATUS ZwUnmapViewOfSection(IntPtr ProcessHandle, IntPtr BaseAddress);
         #endregion
     }
 }
