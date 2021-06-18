@@ -135,7 +135,7 @@ static void Main(string[] args)
         Console.WriteLine("Failed to create process...");
     }
 
-    Console.WriteLine("Successfully victim process...");
+    Console.WriteLine("Successfully created victim process...");
 
 }
 ```
@@ -166,7 +166,7 @@ NTSYSAPI NTSTATUS ZwUnmapViewOfSection(
 
 Previously, we called the `CreateProcessA` function. This function helps fill up our `PROCESS_INFORMATION` block.
 
-`PROCESS_INFORMATION` contains the handle to our victim 
+`PROCESS_INFORMATION` contains the handle to our victim process.
 
 Thus we can get the process handle from it using
 
@@ -260,3 +260,5 @@ static void Main(string[] args)
     Console.WriteLine("Successfully unmapped victim process.");
 }
 ```
+
+![image](https://user-images.githubusercontent.com/12537739/121773946-dfd72180-cbb1-11eb-9338-3ca73ea97228.png)
