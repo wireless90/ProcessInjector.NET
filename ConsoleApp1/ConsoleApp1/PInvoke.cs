@@ -294,7 +294,7 @@ namespace ProcessInjector
 
 
             public int dwProcessId;
-            public int dwThreadI;
+            public int dwThreadId;
         }
 
 

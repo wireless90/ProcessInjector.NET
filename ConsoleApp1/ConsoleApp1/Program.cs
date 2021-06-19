@@ -67,8 +67,15 @@ namespace ConsoleApp1
 
             //I need  threadHandle and threadContext
             IntPtr victimThreadHandle = processInformation.hThread;
-            IntPtr pVictimThreadContext = PrepareThreadContextPointer();
+            
+            PInvoke.CONTEXT64 threadContext = new PInvoke.CONTEXT64() { ContextFlags = PInvoke.CONTEXT_FLAGS.CONTEXT_ALL };
+
+            IntPtr pVictimThreadContext = Allocate(Marshal.SizeOf<PInvoke.CONTEXT64>(), 16);
+
+            Marshal.StructureToPtr<PInvoke.CONTEXT64>(threadContext, pVictimThreadContext, false);
+
             PInvoke.GetThreadContext(victimThreadHandle, pVictimThreadContext);
+
             PInvoke.CONTEXT64 victimThreadContext = Marshal.PtrToStructure<PInvoke.CONTEXT64>(pVictimThreadContext);
 
             #endregion
@@ -147,17 +154,6 @@ namespace ConsoleApp1
             #endregion
 
             PInvoke.ResumeThread(victimThreadHandle);
-        }
-
-        private static IntPtr PrepareThreadContextPointer()
-        {
-            IntPtr pThreadContext = Allocate(Marshal.SizeOf<PInvoke.CONTEXT64>(), 16);
-            
-            PInvoke.CONTEXT64 threadContext = new PInvoke.CONTEXT64() { ContextFlags = PInvoke.CONTEXT_FLAGS.CONTEXT_ALL };
-            
-            Marshal.StructureToPtr<PInvoke.CONTEXT64>(threadContext, pThreadContext, false);
-
-            return pThreadContext;
         }
     }
 }
