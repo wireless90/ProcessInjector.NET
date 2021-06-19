@@ -24,7 +24,7 @@ I want to try to inject a `calculator.exe` into `notepad++.exe` using the `Proce
     + [BaseAddress](#baseaddress)
   * [Code Example](#code-example-1)
 
-# Overview of  PROCESS HOLLOWING (A.K.A PROCESS REPLACEMENT AND RUNPE)
+# Overview of  Process Hollowing aka (Process Replacement/RunPE)
 
 Instead of injecting code into a host program (e.g., DLL injection), malware can perform a technique known as process hollowing. Process hollowing occurs when a malware unmaps (hollows out) the legitimate code from memory of the target process, and overwrites the memory space of the target process (e.g., svchost.exe) with a malicious executable.
 
