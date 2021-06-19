@@ -4,7 +4,7 @@ Learning Process Hollowing technique
 
 # TLDR
 
-I want to try to inject a dummy application into notepad++ using the `Process Hollowing` technique.
+I want to try to inject a `calculator.exe` into `notepad++.exe` using the `Process Hollowing` technique.
 
 - [Creating our Victim Process](#creating-our-victim-process)
   * [CreateProcessA Parameters](#createprocessa-parameters)
@@ -23,6 +23,14 @@ I want to try to inject a dummy application into notepad++ using the `Process Ho
     + [ProcessHandle](#processhandle)
     + [BaseAddress](#baseaddress)
   * [Code Example](#code-example-1)
+
+# Overview of  Process Hollowing aka (Process Replacement/RunPE)
+
+Instead of injecting code into a host program (e.g., DLL injection), malware can perform a technique known as process hollowing. Process hollowing occurs when a malware unmaps (hollows out) the legitimate code from memory of the target process, and overwrites the memory space of the target process (e.g., svchost.exe) with a malicious executable.
+
+![image](https://images.contentstack.io/v3/assets/bltefdd0b53724fa2ce/blt4bd1c915cefd3848/5e2f90f74c16654538e2ce6a/process-injection-techniques-blogs-runpe.gif)
+
+The malware first creates a new process to host the malicious code in `SUSPENDED` mode. This is done by calling `CreateProcess` and setting the Process Creation Flag to `CREATE_SUSPENDED (0x00000004)`. The primary thread of the new process is created in a suspended state, and does not run until the `ResumeThread` function is called. Next, the malware needs to swap out the contents of the legitimate file with its malicious payload. This is done by unmapping the memory of the target process by calling either `ZwUnmapViewOfSection` or `NtUnmapViewOfSection`. These two APIs basically release all memory pointed to by a section. Now that the memory is unmapped, the loader performs `VirtualAllocEx` to allocate new memory for the malware, and uses `WriteProcessMemory` to write each of the malware’s sections to the target process space. The malware calls `SetThreadContext` to point the `entrypoint` to a new code section that it has written. At the end, the malware resumes the suspended thread by calling `ResumeThread` to take the process out of suspended state.
 
 # Creating our Victim Process
 
@@ -113,8 +121,20 @@ Let's go ahead and create our victim process in a suspended state.
 ```cs
 static void Main(string[] args)
 {
-    string notepadPath = @"D:\Program Files\Notepad++\notepad++";
+    //Paths to our files
+    string notepadPath = @"D:\Program Files\Notepad++\notepad++.exe";
+    string virusPath = @"C:\Windows\System32\calc.exe";
 
+    byte[] victimFileBytes = File.ReadAllBytes(notepadPath);
+    IntPtr victimFilePointer = Marshal.UnsafeAddrOfPinnedArrayElement(victimFileBytes, 0);
+
+
+    byte[] virusFileBytes = File.ReadAllBytes(virusPath);
+    IntPtr virusFilePointer = Marshal.UnsafeAddrOfPinnedArrayElement(virusFileBytes, 0);
+
+    #region Create Victim Process in Suspended State    
+    
+    
     PInvoke.STARTUPINFO startupInfo = new PInvoke.STARTUPINFO();
     PInvoke.PROCESS_INFORMATION processInformation = new PInvoke.PROCESS_INFORMATION();
 
@@ -137,6 +157,7 @@ static void Main(string[] args)
 
     Console.WriteLine("Successfully created victim process...");
 
+    #endregion
 }
 ```
 
@@ -144,7 +165,76 @@ static void Main(string[] args)
 
 We have successfully loaded our victim executable to memory, and it is now in a suspended state.
 
+# Getting ThreadContext
 
+The `ThreadContext` contains useful information like the location of the `EntryPoint` or `ImageBase`. These information can easily be obtained from the PE File itself, but it might not always be accurate due to [Address Space Layout Randomization](https://en.wikipedia.org/wiki/Address_space_layout_randomization).
+
+Hence we need to get these values once the process has been loaded, in our case, once the process is stalled in the `SUSPENDED` state.
+
+So now how do we get the `ThreadContext`?
+
+We will be utilizing the function `GetThreadContext`. More details of it can be found [here](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getthreadcontext).
+
+```cpp
+BOOL GetThreadContext(
+  HANDLE    hThread,
+  LPCONTEXT lpContext
+);
+```
+
+## GetThreadContext Parameters
+
+### hThread
+
+A handle to the thread whose context is to be retrieved. 
+
+Previously, when we called `CreateProcessA`, we passed in a `lpProcessInformation` which is of type [PROCESS_INFORMATION](https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/ns-processthreadsapi-process_information). The structure looks as follows in `C#`.
+
+```cs
+/// <summary>
+/// Contains information about a newly created process and its primary thread. 
+/// 
+/// <see cref="https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information"/>\
+/// <seealso cref="https://www.pinvoke.net/default.aspx/kernel32/CreateProcess.html"/>
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct PROCESS_INFORMATION
+{
+    /// <summary>
+    /// A handle to the newly created process. 
+    /// The handle is used to specify the process in all functions that perform operations on the process object.
+    /// </summary>
+    public IntPtr hProcess;
+
+    /// <summary>
+    /// A handle to the primary thread of the newly created process. 
+    /// The handle is used to specify the thread in all functions that perform operations on the thread object.
+    /// </summary>
+    public IntPtr hThread;
+
+
+    public int dwProcessId;
+    public int dwThreadId;
+}
+```
+
+From the above, we can get the handle to the thread using `hThread`.
+
+```cs
+IntPtr victimThreadHandle = processInformation.hThread;
+```
+
+
+### lpContext
+
+A pointer to a CONTEXT structure (such as ARM64_NT_CONTEXT) that receives the appropriate context of the specified thread. The value of the ContextFlags member of this structure specifies which portions of a thread's context are retrieved. The CONTEXT structure is highly processor specific. Refer to the WinNT.h header file for processor-specific definitions of this structures and any alignment requirements.
+
+
+# Getting ImageBase from our victim process
+
+
+
+In order to get the `ThreadContext` of our victim process 
 # Hollowing our Victim Process
 
 To hollow out our victim process, we need to unmap it from the memory, since its already currently loaded into memory but in a suspended state.
