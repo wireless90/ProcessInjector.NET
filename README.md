@@ -165,6 +165,71 @@ static void Main(string[] args)
 
 We have successfully loaded our victim executable to memory, and it is now in a suspended state.
 
+# Getting ThreadContext
+
+The `ThreadContext` contains useful information like the location of the `EntryPoint` or `ImageBase`. These information can easily be obtained from the PE File itself, but it might not always be accurate due to [Address Space Layout Randomization](https://en.wikipedia.org/wiki/Address_space_layout_randomization).
+
+Hence we need to get these values once the process has been loaded, in our case, once the process is stalled in the `SUSPENDED` state.
+
+So now how do we get the `ThreadContext`?
+
+We will be utilizing the function `GetThreadContext`. More details of it can be found [here](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getthreadcontext).
+
+```cpp
+BOOL GetThreadContext(
+  HANDLE    hThread,
+  LPCONTEXT lpContext
+);
+```
+
+## GetThreadContext Parameters
+
+### hThread
+
+A handle to the thread whose context is to be retrieved. 
+
+Previously, when we called `CreateProcessA`, we passed in a `lpProcessInformation` which is of type [PROCESS_INFORMATION](https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/ns-processthreadsapi-process_information). The structure looks as follows in `C#`.
+
+```cs
+/// <summary>
+/// Contains information about a newly created process and its primary thread. 
+/// 
+/// <see cref="https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information"/>\
+/// <seealso cref="https://www.pinvoke.net/default.aspx/kernel32/CreateProcess.html"/>
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct PROCESS_INFORMATION
+{
+    /// <summary>
+    /// A handle to the newly created process. 
+    /// The handle is used to specify the process in all functions that perform operations on the process object.
+    /// </summary>
+    public IntPtr hProcess;
+
+    /// <summary>
+    /// A handle to the primary thread of the newly created process. 
+    /// The handle is used to specify the thread in all functions that perform operations on the thread object.
+    /// </summary>
+    public IntPtr hThread;
+
+
+    public int dwProcessId;
+    public int dwThreadId;
+}
+```
+
+From the above, we can get the handle to the thread using `hThread`.
+
+```cs
+IntPtr victimThreadHandle = processInformation.hThread;
+```
+
+
+### lpContext
+
+A pointer to a CONTEXT structure (such as ARM64_NT_CONTEXT) that receives the appropriate context of the specified thread. The value of the ContextFlags member of this structure specifies which portions of a thread's context are retrieved. The CONTEXT structure is highly processor specific. Refer to the WinNT.h header file for processor-specific definitions of this structures and any alignment requirements.
+
+
 # Getting ImageBase from our victim process
 
 
