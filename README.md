@@ -4,7 +4,7 @@ Learning Process Hollowing technique
 
 # TLDR
 
-I want to try to inject a dummy application into notepad++ using the `Process Hollowing` technique.
+I want to try to inject a `calculator.exe` into `notepad++.exe` using the `Process Hollowing` technique.
 
 - [Creating our Victim Process](#creating-our-victim-process)
   * [CreateProcessA Parameters](#createprocessa-parameters)
@@ -113,8 +113,20 @@ Let's go ahead and create our victim process in a suspended state.
 ```cs
 static void Main(string[] args)
 {
-    string notepadPath = @"D:\Program Files\Notepad++\notepad++";
+    //Paths to our files
+    string notepadPath = @"D:\Program Files\Notepad++\notepad++.exe";
+    string virusPath = @"C:\Windows\System32\calc.exe";
 
+    byte[] victimFileBytes = File.ReadAllBytes(notepadPath);
+    IntPtr victimFilePointer = Marshal.UnsafeAddrOfPinnedArrayElement(victimFileBytes, 0);
+
+
+    byte[] virusFileBytes = File.ReadAllBytes(virusPath);
+    IntPtr virusFilePointer = Marshal.UnsafeAddrOfPinnedArrayElement(virusFileBytes, 0);
+
+    #region Create Victim Process in Suspended State    
+    
+    
     PInvoke.STARTUPINFO startupInfo = new PInvoke.STARTUPINFO();
     PInvoke.PROCESS_INFORMATION processInformation = new PInvoke.PROCESS_INFORMATION();
 
@@ -137,6 +149,7 @@ static void Main(string[] args)
 
     Console.WriteLine("Successfully created victim process...");
 
+    #endregion
 }
 ```
 
@@ -144,7 +157,11 @@ static void Main(string[] args)
 
 We have successfully loaded our victim executable to memory, and it is now in a suspended state.
 
+# Getting ImageBase from our victim process
 
+
+
+In order to get the `ThreadContext` of our victim process 
 # Hollowing our Victim Process
 
 To hollow out our victim process, we need to unmap it from the memory, since its already currently loaded into memory but in a suspended state.
