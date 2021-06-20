@@ -249,7 +249,7 @@ I ported the structure with the help from [PInvoke.Net CONTEXT64](http://www.pin
 Next we need to create the context structure specifying `ContextFlags`. The flag to use would be `CONTEXT_FULL` to get the full context data.
 
 ```cs
- PInvoke.CONTEXT64 threadContext = new PInvoke.CONTEXT64() { ContextFlags = PInvoke.CONTEXT_FLAGS.CONTEXT_ALL };
+ PInvoke.CONTEXT64 victimThreadContext = new PInvoke.CONTEXT64() { ContextFlags = PInvoke.CONTEXT_FLAGS.CONTEXT_ALL };
 ```
 
 As the [context](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getthreadcontext) structure needs to be aligned as stated in microsofts documentation,
@@ -270,7 +270,7 @@ We now have to allocate unmanaged memory space for the context structure.
 IntPtr pVictimThreadContext = Allocate(Marshal.SizeOf<PInvoke.CONTEXT64>(), 16);
 ```
 
-Now that we have allocated space, I am going to translate the context from my managed memory structure variable `threadContext` to the unmanaged memory by
+Now that we have allocated space, I am going to translate the context from my managed memory structure variable `victimThreadContext` to the unmanaged memory by
 
 ```cs
  Marshal.StructureToPtr<PInvoke.CONTEXT64>(victimThreadContext, pVictimThreadContext, false);
@@ -310,7 +310,7 @@ Now why did we get the `ThreadContext` of our victim process in the first place?
 
 It is needed as the context contains details regarding `ImageBase` and `EntryPoint`. Lets tackle the retrieval of `ImageBase`.
 
-Security Researchers found that Rdx was pointing to a memory location. `16 bytes` after it contains the address of the location of ImageBase.
+Security Researchers found that the register Rdx was pointing to a memory location. `16 bytes` after this location contains the address of the location of ImageBase.
 
 Thus we could get the `ImageBase` location's address by
 ```cs
@@ -318,7 +318,7 @@ ulong rdx = victimThreadContext.Rdx;
 ulong victimImageBaseAddress = rdx + 16;
 ```
 
-Now that we got the address, we can read the `ImageBase` value from it by using the function `ReadProcessMemory`. More details of it can be found [here](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-readprocessmemory).
+Now that we got the victim's image base address, we can read the victim's `ImageBase` value from it by using the function `ReadProcessMemory`. More details of it can be found [here](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-readprocessmemory).
 
 ```cpp
 BOOL ReadProcessMemory(
@@ -387,7 +387,7 @@ PInvoke.ReadProcessMemory(victimProcessHandle, victimImageBaseAddress, victimIma
 
 # Hollowing our Victim Process
 
-To hollow out our victim process, we need to unmap it from the memory, since its already currently loaded into memory but in a suspended state.
+Great! Now we have the victim's `ImageBase`. We are going to hollow out the victim's memory starting from its `ImageBase`.
 
 We will be using the function `ZwUnmapViewOfSection`.
 
@@ -416,17 +416,17 @@ IntPtr processHandle = processInformation.hProcess;
 
 ### BaseAddress
 
-We have already retrieved the `ImageBase` previously.
+We have already retrieved the `ImageBase` previously. We will be hollowing out the entire victim image, thus we start from its `ImageBase`.
 
 
 ## Code Example
 
 ```cs
 if (PInvoke.ZwUnmapViewOfSection(victimProcessHandle, victimImageBase) == PInvoke.NTSTATUS.STATUS_ACCESS_DENIED)
-            {
-                Console.WriteLine("Failed to unmap section...");
-                return;
-            }
+ {
+     Console.WriteLine("Failed to unmap section...");
+     return;
+ }
 ```
 Pointer to the base virtual address of the view to unmap
 
