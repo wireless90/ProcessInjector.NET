@@ -416,6 +416,18 @@ IntPtr processHandle = processInformation.hProcess;
 
 ### BaseAddress
 
+We have already retrieved the `ImageBase` previously.
+
+
+## Code Example
+
+```cs
+if (PInvoke.ZwUnmapViewOfSection(victimProcessHandle, victimImageBase) == PInvoke.NTSTATUS.STATUS_ACCESS_DENIED)
+            {
+                Console.WriteLine("Failed to unmap section...");
+                return;
+            }
+```
 Pointer to the base virtual address of the view to unmap
 
 ![image](https://user-images.githubusercontent.com/12537739/121771500-4bb18e00-cba2-11eb-92b7-034b4aefdd38.png)
