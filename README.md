@@ -1,5 +1,5 @@
 # ProcessInjector.NET
-Learning Process Hollowing technique
+Understanding one of the the Process Hollowing technique used by Malware Authors
 
 
 # TLDR
@@ -428,27 +428,37 @@ if (PInvoke.ZwUnmapViewOfSection(victimProcessHandle, victimImageBase) == PInvok
      return;
  }
 ```
-Pointer to the base virtual address of the view to unmap
+
+# Allocating Space for Our Malware Image
+
+In order to make it easier for us to map the malware image, in our case, 'Calculator.exe', we are going rebase the memory in terms of its own `ImageBase` and `Size`.
+
+So now we need to find its `ImageBase` and `Size` by looking into the internals of the PE File.
 
 ![image](https://user-images.githubusercontent.com/12537739/121771500-4bb18e00-cba2-11eb-92b7-034b4aefdd38.png)
 
-As we can see from the image above, we need to get to the `COFF Header`. How do we get to the `COFF Header`? 
+As we can see from the image above, we need to get to the `COFF Header`. 
+
+How do we get to the `COFF Header`? 
 
 At the `DOS_HEADER`, we have a 4 byte integer variable called `E_LFANEW`. This is located at an offset `0x3C` from the start of the file.
-Thus to get `E_LFANEW`, 
-
-```cs
-Int32 e_lfanew = Marshal.ReadInt32(victimeFilePointer, PInvoke.Offsets.E_LFANEW);
-```
 
 `E_LFANEW` contains the offset to get to the `COFF Header`.
 
-Once we get to the `COFF Header`, we can see from the image that the `imagebase` is at `0x34` offset away. However, this is for 32-bit applications. For 64-bit applicaations, there are at a offsett `0x30` away.
-
-Hence to get the `imagebase`, I did
+Thus to get `E_LFANEW`, 
 
 ```cs
-IntPtr imageBasedAddress = new IntPtr(Marshal.ReadInt64(victimeFilePointer, e_lfanew + 0x30));
+int virusElfanew = Marshal.ReadInt32(virusFilePointer, PInvoke.Offsets.E_LFANEW); // PInvoke.Offsets.E_LFANEW refers to 0x3C
+```
+
+Once we get to the `COFF Header` using the `E_LFANEW`, we can see from the image above that the `ImageBase` is at `0x34` offset away and 4 bytes long. However, this is for 32-bit applications. For 64-bit applicaations, there are at a offset `0x30` away and are 8 bytes long.
+
+
+
+Hence to get the `ImageBase`, 
+
+```cs
+long virusImageBase = Marshal.ReadInt64(virusFilePointer, virusElfanew + 0x30);
 ```
 
 Now that we have the `processHandle` and `imagebase` address, we can now call the `ZwUnmapViewOfSection` function to unmap our victim process from memory.
