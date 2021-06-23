@@ -9,71 +9,71 @@ Understanding one of the the Process Hollowing technique used by Malware Authors
 ```sh
 Injecting TvnViewer.exe into notepad++.exe
 [+] Creating Victim Process notepad++.exe
-        [+] Successfully created victim process notepad++.exe
+        [*] Successfully created victim process notepad++.exe
 [+] Retrieving Thread Handle of notepad++.exe
-        [*] Thread Handle at  0x792X
+        [*] Thread Handle at  0x2E0
 [+] Allocating unmanaged memory for ThreadContext of notepad++.exe
 [+] Retrieving ThreadContext of notepad++.exe
 [+] Retrieving ImageBase Address of notepad++.exe
-        [*] notepad++.exe's ImageBase Address is 0x10176729104X
+        [*] notepad++.exe's ImageBase Address is 0xA5A7162010
 [+] Allocating unmanaged memory for notepad++.exe's ImageBase
 [+] Reading ImageBase from notepad++.exe's ImageBase Address
-        [*] ImageBase is 0x10176729104X
+        [*] ImageBase is 0xA5A7162010
 [+] Unmapping notepad++.exe's Image
         [*] Successfully unmapped...
 [+] Retrieving E_LFANEW of TvnViewer.exe
-        [*] E_LFANEW is 0x240X
+        [*] E_LFANEW is 0xF0
 [+] Retrieving TvnViewer.exe's ImageBase
-        [*] ImageBase is 0x5368709120X
+        [*] ImageBase is 0x140000000
 [+] Retrieving Size of TvnViewer.exe
-        [*] Size is 0x1200128X
+        [*] Size is 0x125000
 [+] Allocating space for TvnViewer.exe's Image
         [*] Space allocated at 0x5368709120
 [+] Retrieving TvnViewer.exe's Header Size
-        [*] Header Size is 0x1024X
+        [*] Header Size is 0x400
 [+] Writing Headers of TvnViewer.exe into notepad++.exe at 0x5368709120
         [*] Headers successfully written...
 [+] Retrieving TvnViewer.exe's number of Sections
         [*] Number of sections is  6
 [+] Copying Section 1
         [*] Name: .text
-        [*] Relative Virtual Address: 0x4096X
-        [*] Size of Raw Data: 0x807424X
-        [*] Pointer to Raw Data: 0x1024X
+        [*] Relative Virtual Address: 0x1000
+        [*] Size of Raw Data: 0xC5200
+        [*] Pointer to Raw Data: 0x400
 
 [+] Copying Section 2
         [*] Name: .rdata
-        [*] Relative Virtual Address: 0x815104X
-        [*] Size of Raw Data: 0x248832X
-        [*] Pointer to Raw Data: 0x808448X
+        [*] Relative Virtual Address: 0xC7000
+        [*] Size of Raw Data: 0x3CC00
+        [*] Pointer to Raw Data: 0xC5600
 
 [+] Copying Section 3
         [*] Name: .data
-        [*] Relative Virtual Address: 0x1064960X
-        [*] Size of Raw Data: 0x22528X
-        [*] Pointer to Raw Data: 0x1057280X
+        [*] Relative Virtual Address: 0x104000
+        [*] Size of Raw Data: 0x5800
+        [*] Pointer to Raw Data: 0x102200
 
 [+] Copying Section 4
         [*] Name: .pdata
-        [*] Relative Virtual Address: 0x1101824X
-        [*] Size of Raw Data: 0x51200X
-        [*] Pointer to Raw Data: 0x1079808X
+        [*] Relative Virtual Address: 0x10D000
+        [*] Size of Raw Data: 0xC800
+        [*] Pointer to Raw Data: 0x107A00
 
 [+] Copying Section 5
         [*] Name: .rsrc
-        [*] Relative Virtual Address: 0x1155072X
-        [*] Size of Raw Data: 0x36864X
-        [*] Pointer to Raw Data: 0x1131008X
+        [*] Relative Virtual Address: 0x11A000
+        [*] Size of Raw Data: 0x9000
+        [*] Pointer to Raw Data: 0x114200
 
 [+] Copying Section 6
         [*] Name: .reloc
-        [*] Relative Virtual Address: 0x1191936X
-        [*] Size of Raw Data: 0x7680X
-        [*] Pointer to Raw Data: 0x1167872X
+        [*] Relative Virtual Address: 0x123000
+        [*] Size of Raw Data: 0x1E00
+        [*] Pointer to Raw Data: 0x11D200
 
-[+] ReWriting TvnViewer.exe's ImageBase 0x5368709120X in memory
+[+] ReWriting TvnViewer.exe's ImageBase 0x140000000 in memory
 [       *] ImageBase rewriting successful...
-[+] ReWriting TvnViewer.exe's EntryPoint 0x5368709120X in ThreadContext
+[+] ReWriting TvnViewer.exe's EntryPoint 0x140000000 in ThreadContext
 [       *] EntryPoint rewriting successful...
 [+] Setting ThreadContext
 [+] All set and ready to go!
