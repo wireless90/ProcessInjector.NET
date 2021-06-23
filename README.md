@@ -4,7 +4,81 @@ Understanding one of the the Process Hollowing technique used by Malware Authors
 ![PE Injection](https://user-images.githubusercontent.com/12537739/123103105-4688f480-d468-11eb-83a0-7a3ea3d8dff5.gif)
 
 
+# Example Run
 
+```sh
+Injecting TvnViewer.exe into notepad++.exe
+[+] Creating Victim Process notepad++.exe
+        [+] Successfully created victim process notepad++.exe
+[+] Retrieving Thread Handle of notepad++.exe
+        [*] Thread Handle at  0x792X
+[+] Allocating unmanaged memory for ThreadContext of notepad++.exe
+[+] Retrieving ThreadContext of notepad++.exe
+[+] Retrieving ImageBase Address of notepad++.exe
+        [*] notepad++.exe's ImageBase Address is 0x10176729104X
+[+] Allocating unmanaged memory for notepad++.exe's ImageBase
+[+] Reading ImageBase from notepad++.exe's ImageBase Address
+        [*] ImageBase is 0x10176729104X
+[+] Unmapping notepad++.exe's Image
+        [*] Successfully unmapped...
+[+] Retrieving E_LFANEW of TvnViewer.exe
+        [*] E_LFANEW is 0x240X
+[+] Retrieving TvnViewer.exe's ImageBase
+        [*] ImageBase is 0x5368709120X
+[+] Retrieving Size of TvnViewer.exe
+        [*] Size is 0x1200128X
+[+] Allocating space for TvnViewer.exe's Image
+        [*] Space allocated at 0x5368709120
+[+] Retrieving TvnViewer.exe's Header Size
+        [*] Header Size is 0x1024X
+[+] Writing Headers of TvnViewer.exe into notepad++.exe at 0x5368709120
+        [*] Headers successfully written...
+[+] Retrieving TvnViewer.exe's number of Sections
+        [*] Number of sections is  6
+[+] Copying Section 1
+        [*] Name: .text
+        [*] Relative Virtual Address: 0x4096X
+        [*] Size of Raw Data: 0x807424X
+        [*] Pointer to Raw Data: 0x1024X
+
+[+] Copying Section 2
+        [*] Name: .rdata
+        [*] Relative Virtual Address: 0x815104X
+        [*] Size of Raw Data: 0x248832X
+        [*] Pointer to Raw Data: 0x808448X
+
+[+] Copying Section 3
+        [*] Name: .data
+        [*] Relative Virtual Address: 0x1064960X
+        [*] Size of Raw Data: 0x22528X
+        [*] Pointer to Raw Data: 0x1057280X
+
+[+] Copying Section 4
+        [*] Name: .pdata
+        [*] Relative Virtual Address: 0x1101824X
+        [*] Size of Raw Data: 0x51200X
+        [*] Pointer to Raw Data: 0x1079808X
+
+[+] Copying Section 5
+        [*] Name: .rsrc
+        [*] Relative Virtual Address: 0x1155072X
+        [*] Size of Raw Data: 0x36864X
+        [*] Pointer to Raw Data: 0x1131008X
+
+[+] Copying Section 6
+        [*] Name: .reloc
+        [*] Relative Virtual Address: 0x1191936X
+        [*] Size of Raw Data: 0x7680X
+        [*] Pointer to Raw Data: 0x1167872X
+
+[+] ReWriting TvnViewer.exe's ImageBase 0x5368709120X in memory
+[       *] ImageBase rewriting successful...
+[+] ReWriting TvnViewer.exe's EntryPoint 0x5368709120X in ThreadContext
+[       *] EntryPoint rewriting successful...
+[+] Setting ThreadContext
+[+] All set and ready to go!
+[+] Resuming Thread...
+```
 # TLDR
 
 I want to try to inject a `calculator.exe` into `notepad++.exe` using the `Process Hollowing` technique.
