@@ -22,8 +22,20 @@ Basically,
   * [MsgWaitForMultipleObjectsEx](https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-msgwaitformultipleobjectsex)
   * [NtTestAlert - Undocumented function, credits to ired.team](https://www.ired.team/offensive-security/code-injection-process-injection/shellcode-execution-in-a-local-process-with-queueuserapc-and-nttestalert)
 
+# So where are we going with this?
+
+The core of this injection technique is the function [QueueUserAPC](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-queueuserapc). One might think that an Antivirus or an EDR could simply hook into this function and flag whoever uses it. However, this is a frequently used function for `Asynchronous Programming`. So the security solutions might monitor a chain of call from `QueueUserApc` into `ResumeThread` or some other functions like `CreateThread`, `CreateRemoteThread` API calls which are more popular and hence usually more scrutinized by AV/EDR vendors.
+
+What if there exists a way
+
+But what if
+
+A security solution than might opt to hook
+
 # Credits
-[Ten process injection techniques: A technical survey of common and trending process injection techniques by
+* [Ten process injection techniques: A technical survey of common and trending process injection techniques by
 Ashkan Hosseini](https://www.elastic.co/blog/ten-process-injection-techniques-technical-survey-common-and-trending-process)
-[The Curious Case of QueueUserAPC by Dwight Hohnstein](https://posts.specterops.io/the-curious-case-of-queueuserapc-3f62e966d2cb)
-[Shellcode Execution in a Local Process with QueueUserAPC and NtTestAlert](https://www.ired.team/offensive-security/code-injection-process-injection/shellcode-execution-in-a-local-process-with-queueuserapc-and-nttestalert)
+
+* [The Curious Case of QueueUserAPC by Dwight Hohnstein](https://posts.specterops.io/the-curious-case-of-queueuserapc-3f62e966d2cb)
+
+* [Shellcode Execution in a Local Process with QueueUserAPC and NtTestAlert](https://www.ired.team/offensive-security/code-injection-process-injection/shellcode-execution-in-a-local-process-with-queueuserapc-and-nttestalert)
