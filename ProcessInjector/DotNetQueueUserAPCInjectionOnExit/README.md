@@ -82,7 +82,7 @@ The full source code is in the [repository](https://github.com/wireless90/Proces
 
 # Let's first create our ShellCode
 
-The shellcode is going to be a simple reverse shell written in C#.
+The shellcode is going to be a simple reverse shell written in C#. Its a reverse shell that connects to port `3333`
 
 Code can be found [here](https://github.com/wireless90/ProcessInjector.NET/tree/main/ProcessInjector/SimpleReverseShell.Net);
 
@@ -104,10 +104,30 @@ D:\Users\Razali\Source\Repos\donut>donut.exe -a2 -f2 -cShellCode.Program -mMain 
 ```
 
 `-a2` specifies to compiled the shellcode to `amd64`
+
 `-f2` specifies to encode it to `base64`
+
 `-c` specifies the `<namespace>.<class name>`
+
 `-m` specifies the `Method name`
+
 `-o` specifies the `output filename`
+
+# Lets next set up our listener
+
+I will be using netcat for all examples below, to listen for a connection and interact with the shell.
+
+```sh
+C:\Users\Razali\Desktop\ncat-portable-5.59BETA1>ncat -l 3333
+
+```
+
+# Self Injection
+
+This example demonstrates that after injecting the shellcode within the calling process, when the process exits, the shellcode gets called. At no part of the code did we put any alertable calls. Henceforth, it confirms that the CLR did call an alertable method on behalf of me, which invokes the shellcode, and we get a shell.
+
+
+
 
 # Credits
 * [Ten process injection techniques: A technical survey of common and trending process injection techniques by
