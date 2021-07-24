@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("JustASimpleLoop")]
+[assembly: AssemblyTitle("SimpleConsole")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("JustASimpleLoop")]
+[assembly: AssemblyProduct("SimpleConsole")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("1f513256-33ff-4524-a8ad-c3b3e310525c")]
+[assembly: Guid("6a696f52-d78e-4a63-8cfb-357c4cea3c44")]
 
 // Version information for an assembly consists of the following four values:
 //

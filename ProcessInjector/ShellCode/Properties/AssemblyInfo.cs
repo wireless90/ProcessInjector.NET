@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SimpleReverseShell.Net")]
+[assembly: AssemblyTitle("ShellCode")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("SimpleReverseShell.Net")]
+[assembly: AssemblyProduct("ShellCode")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("1d485bba-07d0-47f7-b97f-283bb810d514")]
+[assembly: Guid("f1e78954-debf-4837-8a1f-f9df3b642647")]
 
 // Version information for an assembly consists of the following four values:
 //
