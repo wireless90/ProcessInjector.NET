@@ -1,4 +1,4 @@
-# ProcessInjector.NET
+# Process Hollowing
 Understanding one of the the Process Hollowing technique used by Malware Authors
 
 ![PE Injection](https://user-images.githubusercontent.com/12537739/123103105-4688f480-d468-11eb-83a0-7a3ea3d8dff5.gif)
