@@ -191,7 +191,15 @@ As expected, the moment I close the application, we gain a reverse shell.
 
 The above image shows that the Form starts, after which the injection of the APC occurs. No connection happens as expected.
 
+![image](https://user-images.githubusercontent.com/12537739/126851778-ba85273c-d13f-4cc0-adcf-e2d60666f498.png)
 
+After exiting the form, we gain a reverse shell.
+
+# Conclusion
+
+We say that the CLR would always make the main thread alertable, which we can leverage on using the QueueUserAPC injection method. Although we could call the alertable method ourselves, allowing the CLR to call it for us makes it more stealthy. We also saw that this could be exploited for any .NET executables.
+
+As [Dwight Hohnstein](https://posts.specterops.io/the-curious-case-of-queueuserapc-3f62e966d2cb) concluded in his blogpost, one can then leverage on hooking into the task schedular events and injecting into one of the scheduled programs. This would allow our code to be ran in a "signed" binary, or be ran with leveraged permissions.
 
 # Credits
 * [Ten process injection techniques: A technical survey of common and trending process injection techniques by
