@@ -1,5 +1,7 @@
 # Stealthy Code Injection in a Running .NET Process
 
+![image](https://user-images.githubusercontent.com/12537739/126855399-5b81ca92-5761-4204-b4ae-9872726a9b0e.png)
+
 # Prologue
 
 For the past few months, I gained interest in understanding more on the Portable Executable(PE) format and Process Injection. [Among the many Process Injection techniques available](https://www.elastic.co/blog/ten-process-injection-techniques-technical-survey-common-and-trending-process), I was intrigued by `APC INJECTION`.
