@@ -537,6 +537,9 @@ long virusImageBase = Marshal.ReadInt64(virusFilePointer, virusElfanew + 0x30);
 
 The size of the region of memory to allocate, in bytes.
 
+![image](https://user-images.githubusercontent.com/12537739/127744292-58773753-9422-4873-8599-e6a63e561b2d.png)
+
+
 From the image above, we can see that the `SizeOfImage` is `0x50` bytes away from the `COFF` header.
 
 Hence we can obtain the `SizeOfImage` by
