@@ -6,4 +6,8 @@
     <AssemblyName>DllHijacking</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="ObjectCloner" Version="2.2.2" />
+  </ItemGroup>
+
 </Project>

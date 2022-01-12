@@ -19,6 +19,11 @@ We will be focusing on .NET Framework/Core dlls in this section.
 2. Hijacking Search Path Using Development Mode
 3. Hijacking Search Path Using Probing Mode
 
+# Setup
+
+This project involves a simple set up of a `.Net core console project`. We will then install a nuget package of your choice.
+
+For this example, I have chose a nuget called `ObjectCloner`.
 
 # Credits
 [What is DLL Hijacking? The Dangerous Windows Exploit](https://www.upguard.com/blog/dll-hijacking)
