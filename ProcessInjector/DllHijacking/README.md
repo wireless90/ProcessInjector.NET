@@ -25,5 +25,13 @@ This project involves a simple set up of a `.Net core console project`. We will 
 
 For this example, I have chose a nuget called `ObjectCloner`.
 
+![image](https://user-images.githubusercontent.com/12537739/149158281-53069f25-b46f-4b16-8a51-e7e1bd7bb654.png)
+
+Do take note of the version of the dll used as hijacking requires a dll of the same version (at least for this example).
+
+> Note: For .Net Framework, you can use Binding Redirects to insert a dll of a different version.
+
+
+
 # Credits
 [What is DLL Hijacking? The Dangerous Windows Exploit](https://www.upguard.com/blog/dll-hijacking)
