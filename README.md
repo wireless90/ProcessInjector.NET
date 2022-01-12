@@ -4,3 +4,4 @@ Experimenting various process injection techniques. Click the below to find out 
 
 * [ProcessHollowing](https://github.com/wireless90/ProcessInjector.NET/tree/main/ProcessInjector/ProcessHollowing)
 * [.Net APCQueue Injection](https://github.com/wireless90/ProcessInjector.NET/tree/main/ProcessInjector/DotNetQueueUserAPCInjectionOnExit)
+* [.Net Dll Hijacking](https://github.com/wireless90/ProcessInjector.NET/tree/main/ProcessInjector/DllHijacking)
