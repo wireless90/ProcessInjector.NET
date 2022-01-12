@@ -32,6 +32,39 @@ Do take note of the version of the dll used as hijacking requires a dll of the s
 > Note: For .Net Framework, you can use Binding Redirects to insert a dll of a different version.
 
 
+We have a simple code that uses the library's `DeepClone` method, which clones our object. Then we print both objects to the screen.
+```cs
+ class Program
+    {
+        static void Main(string[] args)
+        {
+            Person person = new Person("Razali");
+            Person clonedPerson = ObjectCloner.ObjectCloner.DeepClone(person);
+
+            Console.WriteLine($"{person.Name}={clonedPerson.Name}");
+        }
+    }
+
+    public class Person
+    {
+        public Person(string name)
+        {
+            Name = name;
+        }
+        public string Name { get; set; }
+    }
+```
+
+![image](https://user-images.githubusercontent.com/12537739/149162493-a9da9e8f-b97d-464c-b283-6300f7a5840c.png)
+
+What we are more interested in is the program's dependency on the library `ObjectCloner`. 
+
+Compile the program under release and see the `bin\release` directory.
+
+![image](https://user-images.githubusercontent.com/12537739/149163082-cef9d434-e063-48a6-a733-265e7945ed2c.png)
+
 
 # Credits
 [What is DLL Hijacking? The Dangerous Windows Exploit](https://www.upguard.com/blog/dll-hijacking)
+
+[Deep-dive into .NET Core primitives: deps.json, runtimeconfig.json, and dll's](https://natemcmaster.com/blog/2017/12/21/netcore-primitives/)
