@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ObjectCloner" Version="2.2.2" />
+    <PackageReference Include="ObjectCloner" Version="2.1.8" />
   </ItemGroup>
 
 </Project>
