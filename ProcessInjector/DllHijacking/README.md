@@ -121,7 +121,7 @@ A `Startup Hook` has to have
 
 In this demo, we have a `Win10 VM` with `Applocker` enabled with the default rules. In addition, the Applocker has a rule that allows a particular folder to run executables.
 
-> Do remember to run the 'gpupdate /Force' command if you have added a new applocker rule.
+> Do remember to run the `gpupdate /Force` command if you have added a new applocker rule.
 
 
 ![image](https://user-images.githubusercontent.com/12537739/149788090-404edd1b-272b-41ae-86b4-d8d99fb489a6.png)
@@ -131,6 +131,9 @@ As we can see, running the executable from the `Desktop` directory is blocked by
 ![image](https://user-images.githubusercontent.com/12537739/149789288-fc19d934-0c97-477c-b4ae-93ccbacda21c.png)
 
 Running it from the `Allowed` folder gives us a console windows that simply prints `Hello World!`
+
+![image](https://user-images.githubusercontent.com/12537739/149793011-975cccde-3165-44bd-9733-f2c394d92790.png)
+
 
 Now lets prepare our `Startup Hook`!
 
@@ -248,7 +251,7 @@ Now let's start a `netcat` session in our host and listen to port `3333` which i
 Next in our `VM`, lets run the following command to set our environment variable to set our `Startup Hook`.
 
 ```sh
-C:\Users\NormalUser\Desktop\Allowed> set DOT_NET_STARTUP_HOOKS=C:\Users\NormalUser\Desktop\Hook.dll
+C:\Users\NormalUser\Desktop\Allowed> set DOTNET_STARTUP_HOOKS=C:\Users\NormalUser\Desktop\Hook.dll
 ```
 
 Lastly we simply run our program.
