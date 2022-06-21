@@ -242,7 +242,7 @@ Proceed to compile the project as a `Class Library` and we will end up with a `H
 
 Let's copy our `Hook.dll` into the `VM`'s `Desktop` folder. 
 
-> Remember, the `Desktop` folder is restricted to execute any executables. But it doesn't matter as we can bypass it using this hooking method.
+> Remember, the `Desktop` folder is restricted to NOT execute any executables. But it doesn't matter as we can bypass it using this hooking method.
 
 Now let's start a `netcat` session in our host and listen to port `3333` which is configured in our `hook.dll` to connect.
 
