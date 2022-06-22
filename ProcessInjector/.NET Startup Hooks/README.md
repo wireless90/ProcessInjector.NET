@@ -9,8 +9,9 @@ More info regarding Startup Hooks can be seen [here](https://github.com/dotnet/r
 
 
 In this demo, we will focus on
-1. Bypassing Applocker
-2. Introspection and Modification of code or behaviour at Runtime
+1. Bypassing Applocker to run Reverse Shell
+2. Bypassing Applocker to run any Binary
+3. Introspection and Modification of code or behaviour at Runtime
 
 
 # How to define a Startup Hook
@@ -36,7 +37,7 @@ Then, we will have to compile it as a `Class Library` file.
 
 Following that, create an environment variable `set DOTNET_STARTUP_HOOKS=<Full Path to Hook>` and proceed to run your binary.
 
-# Bypassing Applocker
+# Bypassing Applocker to run Reverse Shell
 
 For this demo, I have a `Win10 VM` with `Applocker` enabled with the default rules. In addition, the Applocker has a rule that allows a particular folder to run executables.
 
