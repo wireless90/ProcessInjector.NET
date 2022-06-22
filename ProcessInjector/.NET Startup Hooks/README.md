@@ -1,5 +1,5 @@
 
-# Hijacking via .NET Core Startup Hooks
+# DLL Injection/Manipulation via .NET Core Startup Hooks
 
 Starting from .Net Core 3.x, even .Net 5 and .Net 6, microsoft allows us to specify Startup procedures before our `Main` function runs. 
 
