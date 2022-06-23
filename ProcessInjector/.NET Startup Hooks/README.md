@@ -53,6 +53,8 @@ Running it from the `Allowed` folder gives us a console windows that simply prin
 
 ![image](https://user-images.githubusercontent.com/12537739/149793011-975cccde-3165-44bd-9733-f2c394d92790.png)
 
+We are going to inject our custom code as a dll as a startup hook. You can place this startup hook dll at any location, as long as the main binary is on a location that is allowed by AppLocker. In summary, in order to bypass AppLocker, we would only need a .net core 3 binary or above in the allowed location. We can use this binary as our stub to run any managed code that we want.
+
 
 Now lets prepare our `Startup Hook`!
 
