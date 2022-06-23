@@ -267,4 +267,6 @@ After setting up the hook, we can see that we are authenticated.
 
 <img width="675" alt="image" src="https://user-images.githubusercontent.com/12537739/174954663-d2d496d7-c825-4782-8a3e-3c96caa81e4e.png">
 
+# Summary
 
+Hence with .Net Core Startup Hooks, an attacker could use the CLR to his advantage to load the managed dlls that he wants and need not use suspicious windows api calls like `LoadLibraryEx` etc. To be more evasive, he could also manipulate existing loaded code using the `.Net Reflection` api calls as seen above.
