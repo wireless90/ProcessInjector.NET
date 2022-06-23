@@ -118,6 +118,9 @@ ysoserial.exe --output=raw --gadget=DataSet --formatter=BinaryFormatter
 
 <img width="1269" alt="image" src="https://user-images.githubusercontent.com/12537739/174982518-abb03987-d299-4002-b932-654ccf7b911e.png">
 
+
+We have just spawned an elevated command shell from a non-elevated Administrator perspective, bypassing UAC and Applocker.
+
 # Credits
 
 [Original founder Orange Tsai](https://twitter.com/orange_8361)
